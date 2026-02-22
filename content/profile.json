@@ -1,0 +1,28 @@
+{
+  "name": "Nanu",
+  "tagline": "Explorer, Dreamer & Chief Mischief Officer 🚀",
+  "about": "This is Nanu's corner of the internet! A place where all the funny things he says, the adventures he goes on, and the cool stuff he learns are written down forever. Created by Dad with love ❤️ so that one day Nanu can come back and read all about his awesome childhood.",
+  "birthday": "2019-03-25",
+  "createdBy": "Dad (Prashanth)",
+  "socials": {
+    "github": "https://github.com/kprsnt2"
+  },
+  "favorites": [
+    {
+      "emoji": "🦖",
+      "label": "Dinosaurs"
+    },
+    {
+      "emoji": "🎮",
+      "label": "Games"
+    },
+    {
+      "emoji": "🍕",
+      "label": "Pizza"
+    },
+    {
+      "emoji": "🚀",
+      "label": "Space"
+    }
+  ]
+}

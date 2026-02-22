@@ -1,0 +1,9 @@
+Why AI agents are cool:
+- They can reason and logic
+- They can write code
+- They automate my boring tasks
+
+Show this picture:
+![Agent](/example-agent-pic.png)
+
+Conclusion: you should build an AI agent today!

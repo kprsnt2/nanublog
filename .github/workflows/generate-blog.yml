@@ -1,0 +1,39 @@
+name: Generate AI Blog Posts
+
+on:
+    push:
+        paths:
+            - "blog_drafts/**"
+    workflow_dispatch:
+
+permissions:
+    contents: write
+
+jobs:
+    generate:
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v4
+
+            - name: Setup Node.js
+              uses: actions/setup-node@v4
+              with:
+                  node-version: "20"
+                  cache: "npm"
+
+            - name: Install dependencies
+              run: npm ci
+
+            - name: Generate Blog Posts
+              env:
+                  GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+                  ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+              run: node scripts/generate-blog.mjs
+
+            - name: Commit and Push Changes
+              run: |
+                  git config --global user.name "github-actions[bot]"
+                  git config --global user.email "github-actions[bot]@users.noreply.github.com"
+                  git add content/blogs/
+                  git commit -m "chore: auto-generate blog post from draft" || echo "No changes to commit"
+                  git push
