@@ -9,20 +9,20 @@
   },
   "favorites": [
     {
-      "emoji": "🦖",
-      "label": "Dinosaurs"
+      "emoji": "🚗",
+      "label": "Car"
     },
     {
-      "emoji": "🎮",
-      "label": "Games"
+      "emoji": "🚌",
+      "label": "Bus"
     },
     {
-      "emoji": "🍕",
-      "label": "Pizza"
+      "emoji": "🚂",
+      "label": "Train"
     },
     {
-      "emoji": "🚀",
-      "label": "Space"
+      "emoji": "🚛",
+      "label": "Truck"
     }
   ]
 }
