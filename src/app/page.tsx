@@ -5,6 +5,16 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Github, ArrowRight, Heart, Sparkles } from "lucide-react";
+import OnThisDay from "@/components/on-this-day";
+
+const sectionLinks = [
+  { href: "/blog", emoji: "📖", label: "Stories", description: "Funny adventures & memories" },
+  { href: "/timeline", emoji: "🌱", label: "Timeline", description: "Growth milestones" },
+  { href: "/gallery", emoji: "📸", label: "Gallery", description: "Photo memories" },
+  { href: "/drawings", emoji: "🎨", label: "Drawings", description: "Nanu's artwork" },
+  { href: "/ask-nanu", emoji: "🗣️", label: "Ask Nanu", description: "Yearly Q&A tracker" },
+  { href: "/letters", emoji: "💌", label: "Letters", description: "Messages for the future" },
+];
 
 export default function Home() {
   const recentBlogs = getBlogPosts().slice(0, 3);
@@ -12,10 +22,10 @@ export default function Home() {
 
   return (
     <main className="min-h-screen px-6 py-12 md:py-20">
-      <div className="max-w-4xl mx-auto space-y-20">
+      <div className="max-w-4xl mx-auto space-y-16">
 
         {/* Hero Section */}
-        <section className="text-center space-y-6 py-8">
+        <section className="text-center space-y-6 py-4">
           <div className="text-6xl mb-4">🌟</div>
           <h1 className="text-5xl md:text-7xl font-black tracking-tight fun-gradient">
             Nanu&apos;s World
@@ -47,8 +57,8 @@ export default function Home() {
           )}
         </section>
 
-        {/* Nanu's Favorites Section */}
-        <section className="space-y-8">
+        {/* Nanu's Favorites */}
+        <section className="space-y-6">
           <h2 className="text-3xl font-bold tracking-tight text-center text-purple-800">
             Nanu&apos;s Favorite Things ⭐
           </h2>
@@ -64,9 +74,32 @@ export default function Home() {
           </div>
         </section>
 
-        {/* Recent Stories Section */}
-        <section className="space-y-8">
-          <div className="flex justify-between items-end mb-8">
+        {/* Explore Sections */}
+        <section className="space-y-6">
+          <h2 className="text-3xl font-bold tracking-tight text-center text-purple-800">
+            Explore Nanu&apos;s World 🗺️
+          </h2>
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+            {sectionLinks.map((section) => (
+              <Link key={section.href} href={section.href}>
+                <Card className="card-bounce bg-white border-purple-100 shadow-sm h-full hover:border-purple-300 transition-colors">
+                  <CardContent className="pt-6 pb-4 text-center">
+                    <div className="text-4xl mb-2">{section.emoji}</div>
+                    <p className="font-bold text-purple-700">{section.label}</p>
+                    <p className="text-xs text-purple-400 mt-1">{section.description}</p>
+                  </CardContent>
+                </Card>
+              </Link>
+            ))}
+          </div>
+        </section>
+
+        {/* On This Day */}
+        <OnThisDay />
+
+        {/* Recent Stories */}
+        <section className="space-y-6">
+          <div className="flex justify-between items-end">
             <h2 className="text-3xl font-bold tracking-tight text-purple-800">
               Latest Stories 📖
             </h2>
@@ -86,16 +119,14 @@ export default function Home() {
                         </Link>
                       </CardTitle>
                       {blog.category && (
-                        <Badge variant="secondary" className="text-xs">
-                          {blog.category}
-                        </Badge>
+                        <Badge variant="secondary" className="text-xs">{blog.category}</Badge>
                       )}
                     </div>
                     <time className="text-sm text-purple-400 whitespace-nowrap">
-                      {new Date(blog.date).toLocaleDateString('en-US', {
-                        year: 'numeric',
-                        month: 'long',
-                        day: 'numeric'
+                      {new Date(blog.date).toLocaleDateString("en-US", {
+                        year: "numeric",
+                        month: "long",
+                        day: "numeric",
                       })}
                     </time>
                   </div>

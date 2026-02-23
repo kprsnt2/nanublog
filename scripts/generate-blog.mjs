@@ -42,6 +42,65 @@ async function generateWithClaude(prompt) {
     return msg.content[0].text;
 }
 
+async function generateAI(prompt) {
+    if (process.env.GEMINI_API_KEY) {
+        console.log('Using Gemini API...');
+        return await generateWithGemini(prompt);
+    } else if (process.env.ANTHROPIC_API_KEY) {
+        console.log('Using Claude API...');
+        return await generateWithClaude(prompt);
+    } else {
+        console.error('No AI API key found (GEMINI_API_KEY or ANTHROPIC_API_KEY).');
+        process.exit(1);
+    }
+}
+
+function cleanupContent(content) {
+    const firstDash = content.indexOf('---');
+    if (firstDash !== -1) {
+        content = content.substring(firstDash);
+    }
+    content = content.replace(/\n```\s*$/g, '').trim();
+    return content;
+}
+
+async function generateTeluguTranslation(englishContent, baseName) {
+    const teluguPath = path.join(POSTS_DIR, `${baseName}_te.md`);
+    if (fs.existsSync(teluguPath)) {
+        console.log(`  Telugu version already exists for ${baseName}`);
+        return;
+    }
+
+    console.log(`  Generating Telugu translation for ${baseName}...`);
+
+    const prompt = `Translate the following English blog post into Telugu (తెలుగు). 
+
+RULES:
+- Translate the content naturally into Telugu, keeping the fun and funny tone
+- Keep emojis as-is
+- Keep the YAML frontmatter in English (title, date, excerpt, category fields stay in English)
+- Add a new frontmatter field: language: "te"
+- Names like "Nanu" and "Dad" should stay in English
+- The Telugu should feel natural and conversational, not formal/literary
+- Keep any blockquotes or special formatting
+
+Blog post to translate:
+---
+${englishContent}
+---
+
+Output exactly the markdown with frontmatter (no wrapping like \`\`\`markdown).`;
+
+    try {
+        let teluguContent = await generateAI(prompt);
+        teluguContent = cleanupContent(teluguContent);
+        fs.writeFileSync(teluguPath, teluguContent, 'utf8');
+        console.log(`  Successfully generated Telugu version: ${teluguPath}`);
+    } catch (error) {
+        console.error(`  Failed to generate Telugu translation for ${baseName}:`, error);
+    }
+}
+
 async function processDrafts() {
     const files = fs.readdirSync(DRAFTS_DIR);
     const nanuAge = getNanuAge();
@@ -55,6 +114,9 @@ async function processDrafts() {
         // Skip if already generated
         if (fs.existsSync(postPath)) {
             console.log(`Skipping ${file}: Blog post already exists.`);
+            // Still try Telugu translation for existing posts
+            const existingContent = fs.readFileSync(postPath, 'utf8');
+            await generateTeluguTranslation(existingContent, baseName);
             continue;
         }
 
@@ -109,6 +171,7 @@ The blog must include markdown frontmatter with these fields:
 - 'excerpt': A short funny one-liner about the post (wrapped in double quotes)
 - 'category': A fun category label (wrapped in double quotes)
 - 'nanuAge': ${nanuAge}
+- 'illustration_prompt': A short prompt (wrapped in double quotes) describing a fun cartoon illustration for this post (e.g., "A 6-year-old boy riding a T-Rex to school with a backpack, cartoon style, colorful")
 
 IMPORTANT: You MUST wrap ALL string values in the YAML frontmatter in double quotes to prevent YAML parsing errors.
 ${nanuQuoteInstruction}
@@ -122,29 +185,15 @@ ${draftContent}
 
 Output exactly the markdown with the frontmatter (no wrapping markdown formatting like \`\`\`markdown, just the raw text). Make it awesome! 🎉`;
 
-        let finalContent = '';
-
         try {
-            if (process.env.GEMINI_API_KEY) {
-                console.log('Using Gemini API...');
-                finalContent = await generateWithGemini(systemPrompt);
-            } else if (process.env.ANTHROPIC_API_KEY) {
-                console.log('Using Claude API...');
-                finalContent = await generateWithClaude(systemPrompt);
-            } else {
-                console.error('No AI API key found (GEMINI_API_KEY or ANTHROPIC_API_KEY).');
-                process.exit(1);
-            }
-
-            // Cleanup response formatting
-            const firstDash = finalContent.indexOf('---');
-            if (firstDash !== -1) {
-                finalContent = finalContent.substring(firstDash);
-            }
-            finalContent = finalContent.replace(/\n```\s*$/g, '').trim();
+            let finalContent = await generateAI(systemPrompt);
+            finalContent = cleanupContent(finalContent);
 
             fs.writeFileSync(postPath, finalContent, 'utf8');
             console.log(`Successfully generated ${postPath}`);
+
+            // Generate Telugu translation
+            await generateTeluguTranslation(finalContent, baseName);
 
         } catch (error) {
             console.error(`Failed to process ${file}:`, error);
