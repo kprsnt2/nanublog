@@ -25,7 +25,11 @@ function getNanuAge() {
     return age;
 }
 
+// Track which AI model is being used
+let currentAIModel = '';
+
 async function generateWithGemini(prompt) {
+    currentAIModel = 'Gemini 2.5 Flash';
     const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
     const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
     const result = await model.generateContent(prompt);
@@ -33,6 +37,7 @@ async function generateWithGemini(prompt) {
 }
 
 async function generateWithClaude(prompt) {
+    currentAIModel = 'Claude 3.5 Sonnet';
     const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
     const msg = await anthropic.messages.create({
         model: "claude-3-5-sonnet-20241022",
@@ -62,6 +67,17 @@ function cleanupContent(content) {
     }
     content = content.replace(/\n```\s*$/g, '').trim();
     return content;
+}
+
+function injectAiModel(content, aiModel) {
+    // Insert aiModel field into the frontmatter
+    const parsed = matter(content);
+    parsed.data.aiModel = aiModel;
+    // Ensure tags exist
+    if (!parsed.data.tags && parsed.data.category) {
+        parsed.data.tags = [parsed.data.category];
+    }
+    return matter.stringify(parsed.content, parsed.data);
 }
 
 async function generateTeluguTranslation(englishContent, baseName) {
@@ -172,6 +188,7 @@ The blog must include markdown frontmatter with these fields:
 - 'category': A fun category label (wrapped in double quotes)
 - 'nanuAge': ${nanuAge}
 - 'illustration_prompt': A short prompt (wrapped in double quotes) describing a fun cartoon illustration for this post (e.g., "A 6-year-old boy riding a T-Rex to school with a backpack, cartoon style, colorful")
+- 'tags': An array of relevant tags for this post (e.g., ["Funny Moments", "School", "Questions"])
 
 IMPORTANT: You MUST wrap ALL string values in the YAML frontmatter in double quotes to prevent YAML parsing errors.
 ${nanuQuoteInstruction}
@@ -189,8 +206,11 @@ Output exactly the markdown with the frontmatter (no wrapping markdown formattin
             let finalContent = await generateAI(systemPrompt);
             finalContent = cleanupContent(finalContent);
 
+            // Inject the AI model name into frontmatter
+            finalContent = injectAiModel(finalContent, currentAIModel);
+
             fs.writeFileSync(postPath, finalContent, 'utf8');
-            console.log(`Successfully generated ${postPath}`);
+            console.log(`Successfully generated ${postPath} (by ${currentAIModel})`);
 
             // Generate Telugu translation
             await generateTeluguTranslation(finalContent, baseName);
