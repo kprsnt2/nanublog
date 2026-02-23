@@ -5,6 +5,9 @@ on:
         paths:
             - "blog_drafts/**"
     workflow_dispatch:
+    schedule:
+        # Monthly summary on the last day of each month at midnight UTC
+        - cron: "0 0 28-31 * *"
 
 permissions:
     contents: write
@@ -24,16 +27,29 @@ jobs:
             - name: Install dependencies
               run: npm ci
 
-            - name: Generate Blog Posts
+            - name: Generate Blog Posts (English + Telugu)
               env:
                   GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
                   ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
               run: node scripts/generate-blog.mjs
 
+            - name: Generate Illustrations
+              env:
+                  GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+              run: node scripts/generate-images.mjs
+              continue-on-error: true
+
+            - name: Generate Monthly Summary (if scheduled)
+              if: github.event_name == 'schedule'
+              env:
+                  GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+                  ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+              run: node scripts/generate-monthly-summary.mjs
+
             - name: Commit and Push Changes
               run: |
                   git config --global user.name "github-actions[bot]"
                   git config --global user.email "github-actions[bot]@users.noreply.github.com"
-                  git add content/blogs/
+                  git add content/blogs/ public/illustrations/
                   git commit -m "chore: auto-generate blog post from draft" || echo "No changes to commit"
                   git push

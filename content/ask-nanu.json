@@ -1,0 +1,40 @@
+{
+    "questions": [
+        "What's your favorite food?",
+        "What do you want to be when you grow up?",
+        "Who's your best friend?",
+        "What's your favorite color?",
+        "What makes you happy?",
+        "What's your favorite animal?",
+        "What's the funniest thing you've ever seen?",
+        "What's your favorite thing to do with Dad?"
+    ],
+    "answers": {
+        "2025": {
+            "age": 5,
+            "responses": [
+                "Biryani! And chocolate cake!",
+                "A bus driver. No wait, a truck driver!",
+                "Arjun from my class",
+                "Blue! No, red! Both!",
+                "Playing with cars and watching cartoons",
+                "Tiger! Roarrrr!",
+                "When Dad tried to dance 😂",
+                "Going for a drive in the car!"
+            ]
+        },
+        "2026": {
+            "age": 6,
+            "responses": [
+                "Still biryani. Always biryani.",
+                "A train driver! Because trains are HUGE!",
+                "Arjun and also Ravi now",
+                "Blue. Final answer.",
+                "When school is off and I can play all day!",
+                "Dinosaur! T-Rex specifically.",
+                "When bus aunty said 'sit down' and everyone sat except me 😂",
+                "Building things with Lego and going to the park!"
+            ]
+        }
+    }
+}
