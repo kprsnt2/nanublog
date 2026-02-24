@@ -34,22 +34,22 @@ export default function Home() {
           <p className="text-xl md:text-2xl text-purple-600 dark:text-purple-300 font-semibold">
             {profile.tagline}
           </p>
-          <p className="text-lg text-purple-400 dark:text-purple-400 max-w-2xl mx-auto leading-relaxed">
+          <p className="text-lg text-purple-600 dark:text-purple-400 max-w-2xl mx-auto leading-relaxed">
             {profile.about}
           </p>
 
           <div className="flex flex-wrap justify-center gap-3 pt-4">
-            <Badge className="text-base px-4 py-2 bg-purple-100 dark:bg-purple-900/40 text-purple-700 dark:text-purple-300 border-purple-200 dark:border-purple-700">
+            <Badge className="text-base px-4 py-2 bg-purple-200 dark:bg-purple-900/40 text-purple-800 dark:text-purple-300 border-purple-300 dark:border-purple-700">
               <Sparkles className="w-4 h-4 mr-2" /> {nanuAge} years old
             </Badge>
-            <Badge className="text-base px-4 py-2 bg-pink-100 dark:bg-pink-900/40 text-pink-700 dark:text-pink-300 border-pink-200 dark:border-pink-700">
+            <Badge className="text-base px-4 py-2 bg-pink-200 dark:bg-pink-900/40 text-pink-800 dark:text-pink-300 border-pink-300 dark:border-pink-700">
               <Heart className="w-4 h-4 mr-2" /> Created by Dad with love
             </Badge>
           </div>
 
           {profile.socials.github && (
             <div className="pt-2">
-              <Button asChild variant="outline" size="sm" className="border-purple-200 dark:border-purple-700 text-purple-600 dark:text-purple-300 hover:bg-purple-50 dark:hover:bg-purple-900/30">
+              <Button asChild variant="outline" size="sm" className="border-purple-300 dark:border-purple-700 text-purple-700 dark:text-purple-300 hover:bg-purple-50 dark:hover:bg-purple-900/30">
                 <Link href={profile.socials.github} target="_blank">
                   <Github className="w-4 h-4 mr-2" /> Dad&apos;s GitHub
                 </Link>
@@ -87,7 +87,7 @@ export default function Home() {
                   <CardContent className="pt-6 pb-4 text-center">
                     <div className="text-4xl mb-2">{section.emoji}</div>
                     <p className="font-bold text-purple-700 dark:text-purple-300">{section.label}</p>
-                    <p className="text-xs text-purple-400 dark:text-purple-500 mt-1">{section.description}</p>
+                    <p className="text-xs text-purple-600 dark:text-purple-500 mt-1">{section.description}</p>
                   </CardContent>
                 </Card>
               </Link>
@@ -125,7 +125,7 @@ export default function Home() {
                     </div>
                     <div className="flex items-center gap-2">
                       {blog.readingTime && (
-                        <Badge variant="outline" className="text-xs border-purple-200 dark:border-purple-700 text-purple-500 dark:text-purple-400">
+                        <Badge variant="outline" className="text-xs border-purple-300 dark:border-purple-700 text-purple-700 dark:text-purple-400">
                           <Clock className="w-3 h-3 mr-1" />
                           {blog.readingTime} min
                         </Badge>
@@ -136,7 +136,7 @@ export default function Home() {
                           {blog.aiModel}
                         </Badge>
                       )}
-                      <time className="text-sm text-purple-400 dark:text-purple-500 whitespace-nowrap">
+                      <time className="text-sm text-purple-600 dark:text-purple-500 whitespace-nowrap">
                         {new Date(blog.date).toLocaleDateString("en-US", {
                           year: "numeric",
                           month: "long",
@@ -145,7 +145,7 @@ export default function Home() {
                       </time>
                     </div>
                   </div>
-                  <CardDescription className="text-purple-500 dark:text-purple-400 text-base">
+                  <CardDescription className="text-purple-700 dark:text-purple-400 text-base">
                     {blog.excerpt}
                   </CardDescription>
                 </CardHeader>

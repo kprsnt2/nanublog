@@ -130,13 +130,12 @@
 body::before {
   content: '';
   position: fixed;
-  top: 0;
-  left: 0;
+  inset: 0;
   width: 100%;
   height: 100%;
   background-image: radial-gradient(circle, #E9D5FF 1px, transparent 1px);
   background-size: 40px 40px;
-  opacity: 0.3;
+  opacity: 0.2;
   pointer-events: none;
   z-index: -1;
 }
@@ -148,7 +147,7 @@ body::before {
 
 /* Fun gradient text utility */
 .fun-gradient {
-  background: linear-gradient(135deg, #7C3AED 0%, #F472B6 50%, #FBBF24 100%);
+  background: linear-gradient(135deg, #6D28D9 0%, #DB2777 50%, #D97706 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
