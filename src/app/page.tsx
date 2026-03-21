@@ -4,7 +4,7 @@ import { getBlogPosts, getNanuAge } from "@/lib/blogs";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Github, ArrowRight, Heart, Sparkles } from "lucide-react";
+import { Github, ArrowRight, Heart, Sparkles, Clock, Bot } from "lucide-react";
 import OnThisDay from "@/components/on-this-day";
 
 const sectionLinks = [
@@ -13,7 +13,7 @@ const sectionLinks = [
   { href: "/gallery", emoji: "📸", label: "Gallery", description: "Photo memories" },
   { href: "/drawings", emoji: "🎨", label: "Drawings", description: "Nanu's artwork" },
   { href: "/ask-nanu", emoji: "🗣️", label: "Ask Nanu", description: "Yearly Q&A tracker" },
-  { href: "/letters", emoji: "💌", label: "Letters", description: "Messages for the future" },
+  { href: "/tags", emoji: "🏷️", label: "Tags", description: "Browse by category" },
 ];
 
 export default function Home() {
@@ -22,6 +22,22 @@ export default function Home() {
 
   return (
     <main className="min-h-screen px-6 py-12 md:py-20">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "WebSite",
+            "name": "Nanu's World",
+            "url": process.env.NEXT_PUBLIC_SITE_URL || "https://nanus-world.vercel.app",
+            "description": profile.tagline,
+            "author": {
+              "@type": "Person",
+              "name": "Prashanth (Dad)"
+            }
+          })
+        }}
+      />
       <div className="max-w-4xl mx-auto space-y-16">
 
         {/* Hero Section */}
@@ -122,15 +138,29 @@ export default function Home() {
                         <Badge variant="secondary" className="text-xs">{blog.category}</Badge>
                       )}
                     </div>
-                    <time className="text-sm text-purple-400 whitespace-nowrap">
-                      {new Date(blog.date).toLocaleDateString("en-US", {
-                        year: "numeric",
-                        month: "long",
-                        day: "numeric",
-                      })}
-                    </time>
+                    <div className="flex items-center gap-2">
+                      {blog.readingTime && (
+                        <Badge variant="outline" className="text-xs border-purple-300 text-purple-700">
+                          <Clock className="w-3 h-3 mr-1" />
+                          {blog.readingTime} min
+                        </Badge>
+                      )}
+                      {blog.aiModel && (
+                        <Badge variant="outline" className="text-xs border-blue-200 text-blue-600 bg-blue-50">
+                          <Bot className="w-3 h-3 mr-1" />
+                          {blog.aiModel}
+                        </Badge>
+                      )}
+                      <time className="text-sm text-purple-400 whitespace-nowrap">
+                        {new Date(blog.date).toLocaleDateString("en-US", {
+                          year: "numeric",
+                          month: "long",
+                          day: "numeric",
+                        })}
+                      </time>
+                    </div>
                   </div>
-                  <CardDescription className="text-purple-500 text-base">
+                  <CardDescription className="text-purple-700 dark:text-purple-400 text-base">
                     {blog.excerpt}
                   </CardDescription>
                 </CardHeader>

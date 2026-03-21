@@ -17,20 +17,20 @@ export default function OnThisDay() {
 
     return (
         <section className="space-y-4">
-            <h2 className="text-2xl font-bold text-purple-800 text-center">📅 On This Day</h2>
+            <h2 className="text-2xl font-bold text-purple-800 dark:text-purple-200 text-center">📅 On This Day</h2>
             <div className="space-y-3">
                 {matchingBlogs.map((blog) => {
                     const yearsAgo = today.getFullYear() - new Date(blog.date).getFullYear();
                     return (
-                        <Card key={blog.slug} className="card-bounce bg-gradient-to-r from-yellow-50 to-pink-50 border-yellow-200 shadow-sm">
+                        <Card key={blog.slug} className="card-bounce bg-gradient-to-r from-yellow-50 to-pink-50 dark:from-yellow-900/20 dark:to-pink-900/20 border-yellow-200 dark:border-yellow-800 shadow-sm">
                             <CardContent className="pt-4 pb-4">
-                                <p className="text-sm text-yellow-600 font-semibold mb-1">
+                                <p className="text-sm text-yellow-600 dark:text-yellow-400 font-semibold mb-1">
                                     {yearsAgo} year{yearsAgo !== 1 ? "s" : ""} ago today
                                 </p>
-                                <Link href={`/blog/${blog.slug}`} className="text-purple-800 font-bold hover:underline">
+                                <Link href={`/blog/${blog.slug}`} className="text-purple-800 dark:text-purple-200 font-bold hover:underline">
                                     {blog.title}
                                 </Link>
-                                <p className="text-purple-500 text-sm mt-1">{blog.excerpt}</p>
+                                <p className="text-purple-500 dark:text-purple-400 text-sm mt-1">{blog.excerpt}</p>
                             </CardContent>
                         </Card>
                     );

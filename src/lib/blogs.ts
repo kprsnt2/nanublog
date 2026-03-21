@@ -15,6 +15,15 @@ export interface BlogPost {
   htmlContent?: string;
   category?: string;
   nanuAge?: number;
+  readingTime?: number;
+  tags?: string[];
+  aiModel?: string;
+}
+
+export function calculateReadingTime(content: string): number {
+  const wordsPerMinute = 200;
+  const wordCount = content.trim().split(/\s+/).length;
+  return Math.max(1, Math.ceil(wordCount / wordsPerMinute));
 }
 
 export function getBlogPosts(): BlogPost[] {
@@ -23,7 +32,7 @@ export function getBlogPosts(): BlogPost[] {
   }
   const fileNames = fs.readdirSync(blogsDirectory);
   const allPostsData = fileNames
-    .filter((fileName) => fileName.endsWith('.md'))
+    .filter((fileName) => fileName.endsWith('.md') && !fileName.endsWith('_te.md'))
     .map((fileName) => {
       const slug = fileName.replace(/\.md$/, '');
       const fullPath = path.join(blogsDirectory, fileName);
@@ -38,6 +47,9 @@ export function getBlogPosts(): BlogPost[] {
         content: matterResult.content,
         category: matterResult.data.category || '',
         nanuAge: matterResult.data.nanuAge || undefined,
+        readingTime: calculateReadingTime(matterResult.content),
+        tags: matterResult.data.tags || (matterResult.data.category ? [matterResult.data.category] : []),
+        aiModel: matterResult.data.aiModel || matterResult.data.ai_model || '',
       };
     });
 
@@ -71,7 +83,20 @@ export async function getBlogPostBySlug(slug: string): Promise<BlogPost | null> 
     htmlContent,
     category: matterResult.data.category || '',
     nanuAge: matterResult.data.nanuAge || undefined,
+    readingTime: calculateReadingTime(matterResult.content),
+    tags: matterResult.data.tags || (matterResult.data.category ? [matterResult.data.category] : []),
+    aiModel: matterResult.data.aiModel || matterResult.data.ai_model || '',
   };
+}
+
+export function getAllTags(): string[] {
+  const posts = getBlogPosts();
+  const tagSet = new Set<string>();
+  posts.forEach((post) => {
+    if (post.category) tagSet.add(post.category);
+    if (post.tags) post.tags.forEach((tag) => tagSet.add(tag));
+  });
+  return Array.from(tagSet).sort();
 }
 
 // Helper to calculate Nanu's current age

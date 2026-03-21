@@ -12,7 +12,7 @@ const navLinks = [
     { href: "/gallery", label: "Gallery", emoji: "📸" },
     { href: "/drawings", label: "Drawings", emoji: "🎨" },
     { href: "/ask-nanu", label: "Ask Nanu", emoji: "🗣️" },
-    { href: "/letters", label: "Letters", emoji: "💌" },
+    { href: "/tags", label: "Tags", emoji: "🏷️" },
 ];
 
 export default function Navbar() {
@@ -39,15 +39,17 @@ export default function Navbar() {
                         ))}
                     </div>
 
-                    {/* Mobile menu button */}
-                    <Button
-                        variant="ghost"
-                        size="sm"
-                        className="md:hidden text-purple-600"
-                        onClick={() => setIsOpen(!isOpen)}
-                    >
-                        {isOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
-                    </Button>
+                    {/* Mobile buttons */}
+                    <div className="flex items-center gap-1 md:hidden">
+                        <Button
+                            variant="ghost"
+                            size="sm"
+                            className="text-purple-600"
+                            onClick={() => setIsOpen(!isOpen)}
+                        >
+                            {isOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+                        </Button>
+                    </div>
                 </div>
 
                 {/* Mobile nav */}

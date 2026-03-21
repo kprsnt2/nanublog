@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Nunito } from "next/font/google";
 import Navbar from "@/components/navbar";
+import { Analytics } from "@vercel/analytics/next";
 import "./globals.css";
 
 const nunito = Nunito({
@@ -12,6 +13,22 @@ const nunito = Nunito({
 export const metadata: Metadata = {
   title: "Nanu's World 🌍",
   description: "A fun digital scrapbook of Nanu's adventures, funny quotes, and memories — created by Dad with love ❤️",
+  openGraph: {
+    title: "Nanu's World 🌍",
+    description: "A fun digital scrapbook of Nanu's adventures, funny quotes, and memories — created by Dad with love ❤️",
+    type: "website",
+    siteName: "Nanu's World",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Nanu's World 🌍",
+    description: "A fun digital scrapbook of Nanu's adventures, funny quotes, and memories",
+  },
+  alternates: {
+    types: {
+      "application/rss+xml": "/feed.xml",
+    },
+  },
 };
 
 export default function RootLayout({
@@ -24,6 +41,7 @@ export default function RootLayout({
       <body className={`${nunito.variable} antialiased`}>
         <Navbar />
         {children}
+        <Analytics />
       </body>
     </html>
   );
