@@ -67,14 +67,14 @@ export default function TableOfContents({ htmlContent }: { htmlContent: string }
             <div className="lg:hidden mb-6">
                 <button
                     onClick={() => setIsOpen(!isOpen)}
-                    className="flex items-center gap-2 w-full px-4 py-3 bg-purple-50 dark:bg-purple-900/30 rounded-xl text-purple-700 dark:text-purple-300 font-semibold text-sm"
+                    className="flex items-center gap-2 w-full px-4 py-3 bg-purple-50 rounded-xl text-purple-700 font-semibold text-sm"
                 >
                     <List className="w-4 h-4" />
                     Table of Contents
                     {isOpen ? <ChevronUp className="w-4 h-4 ml-auto" /> : <ChevronDown className="w-4 h-4 ml-auto" />}
                 </button>
                 {isOpen && (
-                    <nav className="mt-2 px-4 py-3 bg-purple-50/50 dark:bg-purple-900/20 rounded-xl">
+                    <nav className="mt-2 px-4 py-3 bg-purple-50/50 rounded-xl">
                         <ul className="space-y-1.5">
                             {headings.map((heading) => (
                                 <li key={heading.id} style={{ paddingLeft: `${(heading.level - 1) * 12}px` }}>
@@ -82,8 +82,8 @@ export default function TableOfContents({ htmlContent }: { htmlContent: string }
                                         href={`#${heading.id}`}
                                         onClick={() => setIsOpen(false)}
                                         className={`block text-sm py-0.5 transition-colors ${activeId === heading.id
-                                            ? "text-purple-700 dark:text-purple-300 font-semibold"
-                                            : "text-purple-500 dark:text-purple-400 hover:text-purple-700 dark:hover:text-purple-300"
+                                            ? "text-purple-700 font-semibold"
+                                            : "text-purple-500 hover:text-purple-700"
                                             }`}
                                     >
                                         {heading.text}
@@ -97,8 +97,8 @@ export default function TableOfContents({ htmlContent }: { htmlContent: string }
 
             {/* Desktop: sticky sidebar */}
             <aside className="hidden lg:block fixed top-24 right-8 w-56 max-h-[calc(100vh-8rem)] overflow-y-auto">
-                <div className="bg-white/80 dark:bg-gray-900/80 backdrop-blur-md border border-purple-100 dark:border-purple-800 rounded-xl p-4 shadow-sm">
-                    <div className="flex items-center gap-2 mb-3 text-purple-700 dark:text-purple-300 font-semibold text-sm">
+                <div className="bg-white/80 backdrop-blur-md border border-purple-100 rounded-xl p-4 shadow-sm">
+                    <div className="flex items-center gap-2 mb-3 text-purple-700 font-semibold text-sm">
                         <List className="w-4 h-4" />
                         Contents
                     </div>
@@ -109,8 +109,8 @@ export default function TableOfContents({ htmlContent }: { htmlContent: string }
                                     <a
                                         href={`#${heading.id}`}
                                         className={`block text-xs py-0.5 transition-colors leading-snug ${activeId === heading.id
-                                            ? "text-purple-700 dark:text-purple-300 font-semibold"
-                                            : "text-purple-400 dark:text-purple-500 hover:text-purple-600 dark:hover:text-purple-300"
+                                            ? "text-purple-700 font-semibold"
+                                            : "text-purple-400 hover:text-purple-600"
                                             }`}
                                     >
                                         {heading.text}

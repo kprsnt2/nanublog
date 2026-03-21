@@ -28,13 +28,13 @@ export default function TagsPage() {
         <main className="min-h-screen px-6 py-12 md:py-20">
             <div className="max-w-3xl mx-auto space-y-8">
                 <div>
-                    <Button asChild variant="ghost" className="mb-6 -ml-4 text-purple-400 hover:text-purple-700 hover:bg-purple-50 dark:hover:bg-purple-900/30 dark:text-purple-400 dark:hover:text-purple-200">
+                    <Button asChild variant="ghost" className="mb-6 -ml-4 text-purple-400 hover:text-purple-700 hover:bg-purple-50">
                         <Link href="/"><ArrowLeft className="w-4 h-4 mr-2" /> Back home</Link>
                     </Button>
-                    <h1 className="text-4xl font-bold tracking-tight mb-4 text-purple-800 dark:text-purple-200">
+                    <h1 className="text-4xl font-bold tracking-tight mb-4 text-purple-800">
                         Tags & Categories 🏷️
                     </h1>
-                    <p className="text-xl text-purple-400 dark:text-purple-400 mb-8">
+                    <p className="text-xl text-purple-400 mb-8">
                         Browse Nanu&apos;s stories by topic!
                     </p>
 
@@ -44,11 +44,11 @@ export default function TagsPage() {
                             <a key={tag} href={`#${tag.toLowerCase().replace(/\s+/g, "-")}`}>
                                 <Badge
                                     variant="secondary"
-                                    className="text-sm px-4 py-2 cursor-pointer hover:bg-purple-200 dark:hover:bg-purple-800 transition-colors"
+                                    className="text-sm px-4 py-2 cursor-pointer hover:bg-purple-200 transition-colors"
                                 >
                                     <Tag className="w-3 h-3 mr-1.5" />
                                     {tag}
-                                    <span className="ml-2 bg-purple-200 dark:bg-purple-700 text-purple-700 dark:text-purple-200 text-xs px-1.5 py-0.5 rounded-full">
+                                    <span className="ml-2 bg-purple-200 text-purple-700 text-xs px-1.5 py-0.5 rounded-full">
                                         {tagMap[tag]?.length || 0}
                                     </span>
                                 </Badge>
@@ -64,7 +64,7 @@ export default function TagsPage() {
                         id={tag.toLowerCase().replace(/\s+/g, "-")}
                         className="space-y-4 scroll-mt-20"
                     >
-                        <h2 className="text-2xl font-bold text-purple-800 dark:text-purple-200 flex items-center gap-2">
+                        <h2 className="text-2xl font-bold text-purple-800 flex items-center gap-2">
                             <Tag className="w-5 h-5" />
                             {tag}
                             <span className="text-sm font-normal text-purple-400">
@@ -73,17 +73,17 @@ export default function TagsPage() {
                         </h2>
                         <div className="space-y-3">
                             {tagMap[tag]?.map((blog) => (
-                                <Card key={blog.slug} className="card-bounce bg-white dark:bg-gray-900 border-purple-100 dark:border-purple-800 shadow-sm">
+                                <Card key={blog.slug} className="card-bounce bg-white border-purple-100 shadow-sm">
                                     <CardHeader className="pb-3">
                                         <div className="flex justify-between items-start md:items-center flex-col md:flex-row gap-2 md:gap-0">
-                                            <CardTitle className="text-lg text-purple-800 dark:text-purple-200">
+                                            <CardTitle className="text-lg text-purple-800">
                                                 <Link href={`/blog/${blog.slug}`} className="hover:underline decoration-purple-300">
                                                     {blog.title}
                                                 </Link>
                                             </CardTitle>
                                             <div className="flex items-center gap-2">
                                                 {blog.readingTime && (
-                                                    <Badge variant="outline" className="text-xs border-purple-200 dark:border-purple-700 text-purple-500 dark:text-purple-400">
+                                                    <Badge variant="outline" className="text-xs border-purple-200 text-purple-500">
                                                         <Clock className="w-3 h-3 mr-1" />
                                                         {blog.readingTime} min read
                                                     </Badge>
@@ -97,7 +97,7 @@ export default function TagsPage() {
                                                 </time>
                                             </div>
                                         </div>
-                                        <CardDescription className="text-purple-500 dark:text-purple-400">
+                                        <CardDescription className="text-purple-500">
                                             {blog.excerpt}
                                         </CardDescription>
                                     </CardHeader>

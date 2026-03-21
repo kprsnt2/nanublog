@@ -52,31 +52,31 @@ export default function NewsletterSignup() {
     };
 
     return (
-        <div className="bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-900/30 dark:to-pink-900/30 border border-purple-100 dark:border-purple-800 rounded-2xl p-6 md:p-8 text-center">
+        <div className="bg-gradient-to-r from-purple-50 to-pink-50 border border-purple-100 rounded-2xl p-6 md:p-8 text-center">
             <div className="text-3xl mb-2">💌</div>
-            <h3 className="text-xl font-bold text-purple-800 dark:text-purple-200 mb-2">
+            <h3 className="text-xl font-bold text-purple-800 mb-2">
                 Get Nanu&apos;s Stories in Your Inbox!
             </h3>
-            <p className="text-purple-500 dark:text-purple-400 text-sm mb-4 max-w-md mx-auto">
+            <p className="text-purple-500 text-sm mb-4 max-w-md mx-auto">
                 Subscribe to get notified whenever Dad writes a new adventure about Nanu. No spam, just smiles! 😊
             </p>
 
             {status === "success" ? (
-                <div className="flex items-center justify-center gap-2 text-green-600 dark:text-green-400 font-semibold">
+                <div className="flex items-center justify-center gap-2 text-green-600 font-semibold">
                     <Check className="w-5 h-5" />
                     {message}
                 </div>
             ) : (
                 <form onSubmit={handleSubmit} className="flex gap-2 max-w-sm mx-auto">
                     <div className="relative flex-1">
-                        <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-purple-300 dark:text-purple-500" />
+                        <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-purple-300" />
                         <Input
                             type="email"
                             placeholder="your@email.com"
                             value={email}
                             onChange={(e) => setEmail(e.target.value)}
                             required
-                            className="pl-10 border-purple-200 dark:border-purple-700 focus:border-purple-400 bg-white dark:bg-gray-900"
+                            className="pl-10 border-purple-200 focus:border-purple-400 bg-white"
                         />
                     </div>
                     <Button
