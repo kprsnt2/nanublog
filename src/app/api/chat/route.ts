@@ -9,7 +9,7 @@ export async function POST(req: Request) {
   const { messages } = await req.json();
 
   const result = streamText({
-    model: google('gemini-2.5-flash'),
+    model: google('gemini-2.5-flash-lite'),
     system: `You are the friendly, helpful AI Assistant for "Nanu's World", a digital scrapbook blog created by Nanu's Dad. 
 Answer questions about Nanu's adventures, stories, and background based on common sense or ask for more context.
 If the user wants to send a message, feedback, or their contact info to Nanu's Dad, ALWAYS use the \`sendUserData\` tool to do it! Be enthusiastic and polite.`,
