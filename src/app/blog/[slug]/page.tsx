@@ -96,7 +96,7 @@ export default async function BlogPost({ params }: { params: Promise<{ slug: str
                 />
                 <div>
                     <div className="flex justify-between items-center mb-6">
-                        <Button asChild variant="ghost" className="text-purple-400 hover:text-purple-700 hover:bg-purple-50 dark:hover:bg-purple-900/30 dark:text-purple-400 dark:hover:text-purple-200 -ml-4">
+                        <Button asChild variant="ghost" className="text-purple-400 hover:text-purple-700 hover:bg-purple-50 -ml-4">
                             <Link href="/blog"><ArrowLeft className="w-4 h-4 mr-2" /> Back to stories</Link>
                         </Button>
                     </div>
@@ -106,28 +106,28 @@ export default async function BlogPost({ params }: { params: Promise<{ slug: str
                             <Badge variant="secondary" className="text-sm">{post.category}</Badge>
                         )}
                         {post.nanuAge && (
-                            <Badge variant="outline" className="text-sm border-purple-200 dark:border-purple-700 text-purple-500 dark:text-purple-400">
+                            <Badge variant="outline" className="text-sm border-purple-200 text-purple-500">
                                 📅 Nanu was {post.nanuAge} years old
                             </Badge>
                         )}
                         {post.readingTime && (
-                            <Badge variant="outline" className="text-sm border-purple-200 dark:border-purple-700 text-purple-500 dark:text-purple-400">
+                            <Badge variant="outline" className="text-sm border-purple-200 text-purple-500">
                                 <Clock className="w-3 h-3 mr-1" />
                                 {post.readingTime} min read
                             </Badge>
                         )}
                         {post.aiModel && (
-                            <Badge variant="outline" className="text-sm border-blue-200 dark:border-blue-700 text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/30">
+                            <Badge variant="outline" className="text-sm border-blue-200 text-blue-600 bg-blue-50">
                                 <Bot className="w-3 h-3 mr-1" />
                                 Written by {post.aiModel}
                             </Badge>
                         )}
                     </div>
 
-                    <h1 className="text-4xl md:text-5xl font-bold tracking-tight mb-4 text-purple-800 dark:text-purple-200">
+                    <h1 className="text-4xl md:text-5xl font-bold tracking-tight mb-4 text-purple-800">
                         {post.title}
                     </h1>
-                    <time className="text-purple-400 dark:text-purple-500">
+                    <time className="text-purple-400">
                         {new Date(post.date).toLocaleDateString("en-US", {
                             year: "numeric",
                             month: "long",
@@ -138,7 +138,7 @@ export default async function BlogPost({ params }: { params: Promise<{ slug: str
 
                 {/* AI-generated illustration */}
                 {hasIllustration && (
-                    <div className="rounded-2xl overflow-hidden border-2 border-purple-100 dark:border-purple-800 shadow-md">
+                    <div className="rounded-2xl overflow-hidden border-2 border-purple-100 shadow-md">
                         <img src={illustrationUrl} alt={`Illustration for ${post.title}`} className="w-full h-auto" />
                     </div>
                 )}
@@ -148,35 +148,35 @@ export default async function BlogPost({ params }: { params: Promise<{ slug: str
 
                 {/* English content */}
                 <div
-                    className="prose prose-purple dark:prose-invert max-w-none
-            prose-headings:font-bold prose-headings:text-purple-800 dark:prose-headings:text-purple-200
-            prose-a:text-purple-600 dark:prose-a:text-purple-400 hover:prose-a:text-purple-800
+                    className="prose prose-purple max-w-none
+            prose-headings:font-bold prose-headings:text-purple-800
+            prose-a:text-purple-600 hover:prose-a:text-purple-800
             prose-img:rounded-xl prose-img:shadow-md
-            prose-blockquote:bg-purple-50 dark:prose-blockquote:bg-purple-900/30 prose-blockquote:border-l-purple-500 prose-blockquote:rounded-r-xl prose-blockquote:py-2 prose-blockquote:px-4
-            prose-strong:text-purple-700 dark:prose-strong:text-purple-300
-            prose-p:text-purple-900 dark:prose-p:text-purple-200 prose-li:text-purple-900 dark:prose-li:text-purple-200"
+            prose-blockquote:bg-purple-50 prose-blockquote:border-l-purple-500 prose-blockquote:rounded-r-xl prose-blockquote:py-2 prose-blockquote:px-4
+            prose-strong:text-purple-700
+            prose-p:text-purple-900 prose-li:text-purple-900"
                     dangerouslySetInnerHTML={{ __html: post.htmlContent || "" }}
                 />
 
                 {/* Telugu translation */}
                 {teluguHtml && (
-                    <div className="mt-10 pt-8 border-t-2 border-dashed border-purple-200 dark:border-purple-700">
+                    <div className="mt-10 pt-8 border-t-2 border-dashed border-purple-200">
                         <div className="flex items-center gap-2 mb-4">
                             <span className="text-2xl">🇮🇳</span>
-                            <h2 className="text-2xl font-bold text-purple-800 dark:text-purple-200">తెలుగులో చదవండి</h2>
+                            <h2 className="text-2xl font-bold text-purple-800">తెలుగులో చదవండి</h2>
                             <span className="text-sm text-purple-400">(Read in Telugu)</span>
                         </div>
                         <div
-                            className="prose prose-purple dark:prose-invert max-w-none
-                prose-headings:font-bold prose-headings:text-purple-800 dark:prose-headings:text-purple-200
-                prose-p:text-purple-900 dark:prose-p:text-purple-200 prose-li:text-purple-900 dark:prose-li:text-purple-200"
+                            className="prose prose-purple max-w-none
+                prose-headings:font-bold prose-headings:text-purple-800
+                prose-p:text-purple-900 prose-li:text-purple-900"
                             dangerouslySetInnerHTML={{ __html: teluguHtml }}
                         />
                     </div>
                 )}
 
                 {/* Social Share */}
-                <div className="pt-4 border-t border-purple-100 dark:border-purple-800">
+                <div className="pt-4 border-t border-purple-100">
                     <SocialShare slug={slug} title={post.title} />
                 </div>
 
@@ -187,9 +187,9 @@ export default async function BlogPost({ params }: { params: Promise<{ slug: str
                 <div className="dads-note mt-12">
                     <div className="flex items-center gap-2 mb-2">
                         <Heart className="w-5 h-5 text-pink-500 fill-pink-500" />
-                        <span className="font-bold text-purple-700 dark:text-purple-300">From Dad</span>
+                        <span className="font-bold text-purple-700">From Dad</span>
                     </div>
-                    <p className="text-purple-600 dark:text-purple-400 text-sm italic">
+                    <p className="text-purple-600 text-sm italic">
                         Every moment with you is an adventure, Nanu. This story is saved here forever, so you can come back and smile whenever you want. Love you, kiddo! ❤️
                     </p>
                 </div>

@@ -160,7 +160,7 @@ export default function Home() {
                       </time>
                     </div>
                   </div>
-                  <CardDescription className="text-purple-700 dark:text-purple-400 text-base">
+                  <CardDescription className="text-purple-700 text-base">
                     {blog.excerpt}
                   </CardDescription>
                 </CardHeader>

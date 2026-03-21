@@ -78,7 +78,7 @@ export default function SocialShare({ slug, title }: SocialShareProps) {
 
     return (
         <div className="flex flex-wrap items-center gap-2">
-            <span className="text-sm text-purple-500 dark:text-purple-400 font-semibold mr-1">
+            <span className="text-sm text-purple-500 font-semibold mr-1">
                 <Share2 className="w-4 h-4 inline mr-1" />
                 Share:
             </span>
@@ -87,7 +87,7 @@ export default function SocialShare({ slug, title }: SocialShareProps) {
                 variant="outline"
                 size="sm"
                 onClick={shareToTwitter}
-                className="border-purple-200 dark:border-purple-700 text-purple-600 dark:text-purple-300 hover:bg-purple-50 dark:hover:bg-purple-900/30 h-8 px-3"
+                className="border-purple-200 text-purple-600 hover:bg-purple-50 h-8 px-3"
                 aria-label="Share on Twitter"
             >
                 <Twitter className="w-3.5 h-3.5 mr-1.5" />
@@ -98,7 +98,7 @@ export default function SocialShare({ slug, title }: SocialShareProps) {
                 variant="outline"
                 size="sm"
                 onClick={shareToLinkedIn}
-                className="border-purple-200 dark:border-purple-700 text-purple-600 dark:text-purple-300 hover:bg-purple-50 dark:hover:bg-purple-900/30 h-8 px-3"
+                className="border-purple-200 text-purple-600 hover:bg-purple-50 h-8 px-3"
                 aria-label="Share on LinkedIn"
             >
                 <Linkedin className="w-3.5 h-3.5 mr-1.5" />
@@ -109,7 +109,7 @@ export default function SocialShare({ slug, title }: SocialShareProps) {
                 variant="outline"
                 size="sm"
                 onClick={copyLink}
-                className="border-purple-200 dark:border-purple-700 text-purple-600 dark:text-purple-300 hover:bg-purple-50 dark:hover:bg-purple-900/30 h-8 px-3"
+                className="border-purple-200 text-purple-600 hover:bg-purple-50 h-8 px-3"
                 aria-label="Copy link"
             >
                 {copied ? (
@@ -129,7 +129,7 @@ export default function SocialShare({ slug, title }: SocialShareProps) {
                 variant="outline"
                 size="sm"
                 onClick={() => setShowQr(!showQr)}
-                className="border-purple-200 dark:border-purple-700 text-purple-600 dark:text-purple-300 hover:bg-purple-50 dark:hover:bg-purple-900/30 h-8 px-3"
+                className="border-purple-200 text-purple-600 hover:bg-purple-50 h-8 px-3"
                 aria-label="Show QR code"
             >
                 <QrCode className="w-3.5 h-3.5 mr-1.5" />
@@ -141,7 +141,7 @@ export default function SocialShare({ slug, title }: SocialShareProps) {
                     variant="outline"
                     size="sm"
                     onClick={nativeShare}
-                    className="border-purple-200 dark:border-purple-700 text-purple-600 dark:text-purple-300 hover:bg-purple-50 dark:hover:bg-purple-900/30 h-8 px-3 md:hidden"
+                    className="border-purple-200 text-purple-600 hover:bg-purple-50 h-8 px-3 md:hidden"
                     aria-label="Share via device"
                 >
                     <Share2 className="w-3.5 h-3.5 mr-1.5" />
@@ -151,14 +151,14 @@ export default function SocialShare({ slug, title }: SocialShareProps) {
 
             {showQr && (
                 <div className="w-full mt-3 flex justify-center">
-                    <div className="bg-white dark:bg-gray-900 border border-purple-100 dark:border-purple-800 rounded-xl p-4 shadow-lg inline-block">
-                        <p className="text-sm text-purple-600 dark:text-purple-300 font-semibold mb-2 text-center">
+                    <div className="bg-white border border-purple-100 rounded-xl p-4 shadow-lg inline-block">
+                        <p className="text-sm text-purple-600 font-semibold mb-2 text-center">
                             Scan to share! 📱
                         </p>
                         <canvas ref={canvasRef} className="rounded-lg mx-auto" />
                         <button
                             onClick={() => setShowQr(false)}
-                            className="mt-2 text-xs text-purple-400 hover:text-purple-600 dark:hover:text-purple-300 w-full text-center"
+                            className="mt-2 text-xs text-purple-400 hover:text-purple-600 w-full text-center"
                         >
                             Close
                         </button>
