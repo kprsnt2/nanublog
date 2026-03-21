@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Nunito } from "next/font/google";
 import Navbar from "@/components/navbar";
+import ChatWidget from "@/components/chat-widget";
 import { Analytics } from "@vercel/analytics/next";
 import "./globals.css";
 
@@ -41,6 +42,7 @@ export default function RootLayout({
       <body className={`${nunito.variable} antialiased`}>
         <Navbar />
         {children}
+        <ChatWidget />
         <Analytics />
       </body>
     </html>
