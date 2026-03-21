@@ -22,6 +22,22 @@ export default function Home() {
 
   return (
     <main className="min-h-screen px-6 py-12 md:py-20">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "WebSite",
+            "name": "Nanu's World",
+            "url": process.env.NEXT_PUBLIC_SITE_URL || "https://nanus-world.vercel.app",
+            "description": profile.tagline,
+            "author": {
+              "@type": "Person",
+              "name": "Prashanth (Dad)"
+            }
+          })
+        }}
+      />
       <div className="max-w-4xl mx-auto space-y-16">
 
         {/* Hero Section */}

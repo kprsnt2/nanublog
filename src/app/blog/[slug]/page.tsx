@@ -72,6 +72,28 @@ export default async function BlogPost({ params }: { params: Promise<{ slug: str
     return (
         <main className="min-h-screen px-6 py-12 md:py-20">
             <article className="max-w-3xl mx-auto space-y-8">
+                <script
+                    type="application/ld+json"
+                    dangerouslySetInnerHTML={{
+                        __html: JSON.stringify({
+                            "@context": "https://schema.org",
+                            "@type": "BlogPosting",
+                            "headline": post.title,
+                            "description": post.excerpt,
+                            "author": [
+                                {
+                                    "@type": "Person",
+                                    "name": "Prashanth (Dad)"
+                                }
+                            ],
+                            "datePublished": post.date,
+                            "mainEntityOfPage": {
+                                "@type": "WebPage",
+                                "@id": `${process.env.NEXT_PUBLIC_SITE_URL || "https://nanus-world.vercel.app"}/blog/${slug}`
+                            }
+                        })
+                    }}
+                />
                 <div>
                     <div className="flex justify-between items-center mb-6">
                         <Button asChild variant="ghost" className="text-purple-400 hover:text-purple-700 hover:bg-purple-50 dark:hover:bg-purple-900/30 dark:text-purple-400 dark:hover:text-purple-200 -ml-4">
