@@ -6,7 +6,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Github, ArrowRight, Heart, Sparkles, Clock, Bot } from "lucide-react";
 import OnThisDay from "@/components/on-this-day";
-import NewsletterSignup from "@/components/newsletter-signup";
 
 const sectionLinks = [
   { href: "/blog", emoji: "📖", label: "Stories", description: "Funny adventures & memories" },
@@ -161,9 +160,6 @@ export default function Home() {
             )}
           </div>
         </section>
-
-        {/* Newsletter Signup */}
-        <NewsletterSignup />
 
         {/* Footer */}
         <footer className="text-center py-8 text-purple-400 text-sm">
