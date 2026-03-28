@@ -1,5 +1,5 @@
 import { google } from '@ai-sdk/google';
-import { streamText, stepCountIs } from 'ai';
+import { streamText, stepCountIs, convertToModelMessages } from 'ai';
 import { z } from 'zod';
 import fs from 'fs';
 import path from 'path';
@@ -60,6 +60,9 @@ const blogContext = loadBlogContext();
 export async function POST(req: Request) {
   const { messages } = await req.json();
 
+  // Convert UIMessages (parts format) from the frontend to ModelMessages (content format) for streamText
+  const modelMessages = await convertToModelMessages(messages);
+
   const result = streamText({
     model: google('gemini-2.5-flash-lite'),
     system: `You are the friendly, warm AI assistant for "Nanu's World" — a digital scrapbook blog created by Nanu's Dad (Prashanth).
@@ -78,7 +81,7 @@ IMPORTANT RULES:
 
 ${blogContext}
 ---`,
-    messages,
+    messages: modelMessages,
     tools: {
       sendUserData: {
         description: 'Sends a name, message, and optional email to Dad so he can read it. Use this whenever someone wants to leave feedback, send a message, or share their contact info.',
