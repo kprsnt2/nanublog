@@ -638,15 +638,19 @@ function AskNanuEditor({
   const [newYear, setNewYear] = useState(String(new Date().getFullYear()));
   const [newAge, setNewAge] = useState("");
 
+  const questions = data?.questions || [];
+  const answers = data?.answers || {};
+
   const addYear = () => {
-    if (!newYear || data.answers[newYear]) return;
+    if (!newYear || answers[newYear]) return;
     const updated = {
       ...data,
+      questions,
       answers: {
-        ...data.answers,
+        ...answers,
         [newYear]: {
           age: parseInt(newAge) || 0,
-          responses: data.questions.map(() => ""),
+          responses: questions.map(() => ""),
         },
       },
     };
@@ -656,22 +660,23 @@ function AskNanuEditor({
   };
 
   const updateResponse = (year: string, qIndex: number, value: string) => {
-    const updated = { ...data, answers: { ...data.answers } };
+    const updated = { ...data, questions, answers: { ...answers } };
+    if (!updated.answers[year]) return;
     updated.answers[year] = {
       ...updated.answers[year],
-      responses: [...updated.answers[year].responses],
+      responses: [...(updated.answers[year].responses || [])],
     };
     updated.answers[year].responses[qIndex] = value;
     onChange(updated);
   };
 
   const removeYear = (year: string) => {
-    const updated = { ...data, answers: { ...data.answers } };
+    const updated = { ...data, questions, answers: { ...answers } };
     delete updated.answers[year];
     onChange(updated);
   };
 
-  const years = Object.keys(data.answers).sort();
+  const years = Object.keys(answers).sort();
 
   return (
     <div className="space-y-4">
@@ -683,9 +688,10 @@ function AskNanuEditor({
       <div className="p-4 rounded-xl bg-purple-50/60 border border-purple-100">
         <p className="font-semibold text-purple-700 text-sm mb-2">Questions (same every year):</p>
         <ol className="list-decimal list-inside space-y-1 text-sm text-purple-600">
-          {data.questions.map((q, i) => (
+          {questions.map((q, i) => (
             <li key={i}>{q}</li>
           ))}
+          {questions.length === 0 && <p>No questions yet.</p>}
         </ol>
       </div>
 
@@ -708,15 +714,15 @@ function AskNanuEditor({
       {years.map((year) => (
         <EntryCard
           key={year}
-          title={`${year} — Age ${data.answers[year].age}`}
+          title={`${year} — Age ${answers[year]?.age || 0}`}
           onDelete={() => removeYear(year)}
         >
           <div className="space-y-3">
-            {data.questions.map((q, qi) => (
+            {questions.map((q, qi) => (
               <div key={qi}>
                 <FieldLabel>Q: {q}</FieldLabel>
                 <Input
-                  value={data.answers[year].responses[qi] || ""}
+                  value={answers[year]?.responses?.[qi] || ""}
                   onChange={(e) => updateResponse(year, qi, e.target.value)}
                   placeholder="Nanu's answer..."
                   className="border-purple-200 text-sm"
@@ -803,22 +809,25 @@ function ProfileEditor({
   data: ProfileData;
   onChange: (d: ProfileData) => void;
 }) {
+  const favorites = data?.favorites || [];
+  const socials = data?.socials || { github: "" };
+
   const updateField = (field: string, value: string) => {
     onChange({ ...data, [field]: value });
   };
 
   const addFavorite = () => {
-    onChange({ ...data, favorites: [...data.favorites, { emoji: "⭐", label: "" }] });
+    onChange({ ...data, favorites: [...favorites, { emoji: "⭐", label: "" }] });
   };
 
   const updateFavorite = (i: number, field: "emoji" | "label", value: string) => {
-    const faves = [...data.favorites];
+    const faves = [...favorites];
     faves[i] = { ...faves[i], [field]: value };
     onChange({ ...data, favorites: faves });
   };
 
   const removeFavorite = (i: number) => {
-    onChange({ ...data, favorites: data.favorites.filter((_, idx) => idx !== i) });
+    onChange({ ...data, favorites: favorites.filter((_, idx) => idx !== i) });
   };
 
   return (
@@ -828,27 +837,27 @@ function ProfileEditor({
       <FormRow>
         <div>
           <FieldLabel>Name</FieldLabel>
-          <Input value={data.name} onChange={(e) => updateField("name", e.target.value)} className="border-purple-200 text-sm" />
+          <Input value={data?.name || ""} onChange={(e) => updateField("name", e.target.value)} className="border-purple-200 text-sm" />
         </div>
         <div>
           <FieldLabel>Birthday</FieldLabel>
-          <Input type="date" value={data.birthday} onChange={(e) => updateField("birthday", e.target.value)} className="border-purple-200 text-sm" />
+          <Input type="date" value={data?.birthday || ""} onChange={(e) => updateField("birthday", e.target.value)} className="border-purple-200 text-sm" />
         </div>
         <div>
           <FieldLabel>Created By</FieldLabel>
-          <Input value={data.createdBy} onChange={(e) => updateField("createdBy", e.target.value)} className="border-purple-200 text-sm" />
+          <Input value={data?.createdBy || ""} onChange={(e) => updateField("createdBy", e.target.value)} className="border-purple-200 text-sm" />
         </div>
       </FormRow>
 
       <div>
         <FieldLabel>Tagline</FieldLabel>
-        <Input value={data.tagline} onChange={(e) => updateField("tagline", e.target.value)} className="border-purple-200 text-sm" />
+        <Input value={data?.tagline || ""} onChange={(e) => updateField("tagline", e.target.value)} className="border-purple-200 text-sm" />
       </div>
 
       <div>
         <FieldLabel>About</FieldLabel>
         <textarea
-          value={data.about}
+          value={data?.about || ""}
           onChange={(e) => updateField("about", e.target.value)}
           rows={3}
           className="w-full rounded-md border border-purple-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-purple-400 bg-white"
@@ -858,8 +867,8 @@ function ProfileEditor({
       <div>
         <FieldLabel>GitHub URL</FieldLabel>
         <Input
-          value={data.socials?.github || ""}
-          onChange={(e) => onChange({ ...data, socials: { ...data.socials, github: e.target.value } })}
+          value={socials.github || ""}
+          onChange={(e) => onChange({ ...data, socials: { ...socials, github: e.target.value } })}
           className="border-purple-200 text-sm"
         />
       </div>
@@ -873,15 +882,15 @@ function ProfileEditor({
           </Button>
         </div>
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-          {data.favorites.map((fav, i) => (
+          {favorites.map((fav, i) => (
             <div key={i} className="flex items-center gap-1.5 p-2 rounded-lg border border-purple-100 bg-purple-50/40 group">
               <Input
-                value={fav.emoji}
+                value={fav.emoji || ""}
                 onChange={(e) => updateFavorite(i, "emoji", e.target.value)}
                 className="w-12 text-center border-purple-200 text-sm p-1"
               />
               <Input
-                value={fav.label}
+                value={fav.label || ""}
                 onChange={(e) => updateFavorite(i, "label", e.target.value)}
                 className="flex-1 border-purple-200 text-sm"
                 placeholder="Label"
@@ -894,6 +903,7 @@ function ProfileEditor({
               </button>
             </div>
           ))}
+          {favorites.length === 0 && <p className="text-sm text-purple-400 col-span-2">No favorites added yet.</p>}
         </div>
       </div>
     </div>
