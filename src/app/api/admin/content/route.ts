@@ -1,5 +1,7 @@
 import { NextResponse } from 'next/server';
 
+export const dynamic = 'force-dynamic';
+
 const GITHUB_OWNER = 'kprsnt2';
 const GITHUB_REPO = 'nanublog';
 const GITHUB_BRANCH = 'test2features';
@@ -17,8 +19,16 @@ const ALLOWED_FILES = [
 function authenticate(request: Request): boolean {
   const auth = request.headers.get('authorization');
   if (!auth) return false;
-  const token = auth.replace('Bearer ', '');
-  return token === process.env.ADMIN_PASSWORD;
+  
+  const token = auth.replace('Bearer ', '').trim();
+  const expectedPassword = process.env.ADMIN_PASSWORD?.trim();
+
+  if (!expectedPassword) {
+    console.error('[ADMIN ERR] ADMIN_PASSWORD environment variable is missing in Vercel.');
+    return false;
+  }
+
+  return token === expectedPassword;
 }
 
 // GET — fetch a content file from GitHub
