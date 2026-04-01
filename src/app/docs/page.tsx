@@ -381,149 +381,88 @@ system: \`You are the friendly AI assistant for "Nanu's World"...
           </div>
         </section>
 
-        {/* ──── Data API ──── */}
+        {/* ──── API Usage ──── */}
         <section>
           <SectionHeading
-            emoji="📡"
-            title="Data API"
-            subtitle="POST /api/data — secure message collection endpoint"
+            emoji="💻"
+            title="API Usage"
+            subtitle="Connect to Nanu's AI from your own scripts and tools"
           />
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-            <Card className="border-purple-100 bg-white shadow-sm">
-              <CardHeader>
-                <CardTitle className="text-lg text-purple-800 flex items-center gap-2">
-                  <Shield className="w-5 h-5 text-emerald-500" />
-                  Validation &amp; Sanitization
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-2 text-sm text-purple-600">
-                <ul className="space-y-2">
-                  <li className="flex items-start gap-2">
-                    <span className="text-emerald-500 mt-0.5">✓</span>
-                    <span>
-                      <strong>Name</strong> — required, max 200 chars, trimmed
-                    </span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <span className="text-emerald-500 mt-0.5">✓</span>
-                    <span>
-                      <strong>Message</strong> — required, max 2,000 chars
-                    </span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <span className="text-emerald-500 mt-0.5">✓</span>
-                    <span>
-                      <strong>Email</strong> — optional, max 320 chars, regex
-                      validated
-                    </span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <span className="text-emerald-500 mt-0.5">✓</span>
-                    <span>
-                      <strong>Source</strong> — tagged as
-                      &quot;ai-agent&quot; or &quot;unknown&quot;
-                    </span>
-                  </li>
-                </ul>
-              </CardContent>
-            </Card>
-
-            <Card className="border-purple-100 bg-white shadow-sm">
-              <CardHeader>
-                <CardTitle className="text-lg text-purple-800 flex items-center gap-2">
-                  <Lock className="w-5 h-5 text-red-500" />
-                  Rate Limiting
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-2 text-sm text-purple-600">
-                <ul className="space-y-2">
-                  <li className="flex items-start gap-2">
-                    <span className="text-purple-500 mt-0.5">⏱</span>
-                    <span>
-                      <strong>10 requests</strong> per IP per 60-second window
-                    </span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <span className="text-purple-500 mt-0.5">🗄️</span>
-                    <span>
-                      In-memory map — resets on cold start (fine for this scale)
-                    </span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <span className="text-purple-500 mt-0.5">🔑</span>
-                    <span>
-                      IP extracted from{" "}
-                      <code className="px-1 py-0.5 bg-purple-100 rounded text-purple-700 text-xs font-mono">
-                        x-forwarded-for
-                      </code>{" "}
-                      / <code className="px-1 py-0.5 bg-purple-100 rounded text-purple-700 text-xs font-mono">x-real-ip</code>
-                    </span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <span className="text-purple-500 mt-0.5">⚠️</span>
-                    <span>
-                      Returns <strong>429</strong> with friendly error if exceeded
-                    </span>
-                  </li>
-                </ul>
-              </CardContent>
-            </Card>
-          </div>
-
-          <div className="space-y-4">
-            <h3 className="text-xl font-bold text-purple-800 flex items-center gap-2">
-              <Database className="w-5 h-5 text-blue-500" />
-              Dual Storage Strategy
-            </h3>
-            <p className="text-purple-600 text-sm leading-relaxed">
-              Submissions are always logged to{" "}
-              <code className="px-1.5 py-0.5 bg-purple-100 rounded text-purple-700 text-xs font-mono">
-                console.log
-              </code>{" "}
-              (visible in Vercel function logs). Locally, they&apos;re also
-              written to{" "}
-              <code className="px-1.5 py-0.5 bg-purple-100 rounded text-purple-700 text-xs font-mono">
-                user_submissions.json
-              </code>
-              . On Vercel&apos;s read-only filesystem the file write is
-              gracefully caught — no crash, no data loss.
+          <div className="space-y-6">
+            <p className="text-purple-600 text-sm leading-relaxed text-center max-w-2xl mx-auto mb-8">
+              The <code className="px-1.5 py-0.5 bg-purple-100 rounded text-purple-700 text-xs font-mono">/api/chat</code> endpoint uses the Vercel AI SDK and streams responses using Server-Sent Events (SSE). You can easily parse this stream in any language!
             </p>
-            <CodeBlock
-              title="api/data/route.ts — Storage"
-              code={`// Always logs (works everywhere)
-console.log('[USER SUBMISSION]', JSON.stringify(entry));
 
-// File-based storage (local dev only)
-try {
-  const filePath = path.join(process.cwd(), 'user_submissions.json');
-  // read → append → write
-} catch {
-  // Read-only FS on Vercel — gracefully skipped
-  console.warn('[DATA] File write skipped.');
-}`}
-            />
-          </div>
-
-          {/* Request/response example */}
-          <div className="space-y-4 mt-10">
-            <h3 className="text-xl font-bold text-purple-800 flex items-center gap-2">
-              <Terminal className="w-5 h-5 text-purple-500" />
-              Try It Out
-            </h3>
             <CodeBlock
-              title="cURL example"
+              title="cURL — Streaming chat response"
               language="bash"
-              code={`curl -X POST https://nanus-world.vercel.app/api/data \\
+              code={`curl -X POST https://nanu.kprsnt.in/api/chat \\
   -H "Content-Type: application/json" \\
   -d '{
-    "name": "Visitor",
-    "message": "Love this blog!",
-    "email": "visitor@example.com"
-  }'
+    "messages": [{"role": "user", "content": "Tell me a fun fact about Nanu!"}]
+  }'`}
+            />
 
-# Response:
-# { "success": true, "message": "Data received and stored successfully." }`}
+            <CodeBlock
+              title="Python — Parsing the SSE format stream"
+              language="python"
+              code={`import requests
+import json
+
+response = requests.post(
+    "https://nanu.kprsnt.in/api/chat",
+    json={"messages": [{"role": "user", "content": "Hi Nanu!"}]},
+    stream=True
+)
+
+for line in response.iter_lines():
+    if line:
+        text = line.decode('utf-8')
+        # The AI SDK streams Server-Sent Events starting with "data: "
+        if text.startswith("data: "):
+            data_str = text[6:]
+            if data_str.strip() == "[DONE]":
+                break
+            try:
+                event = json.loads(data_str)
+                if event.get("type") == "text-delta":
+                    print(event.get("delta", ""), end="", flush=True)
+            except:
+                pass`}
+            />
+            
+            <CodeBlock
+              title="JavaScript / Node.js — Fetch API parsing"
+              language="javascript"
+              code={`const response = await fetch("https://nanu.kprsnt.in/api/chat", {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify({ messages: [{ role: "user", content: "Hi!" }] })
+});
+
+const reader = response.body.getReader();
+const decoder = new TextDecoder();
+
+while (true) {
+  const { done, value } = await reader.read();
+  if (done) break;
+  
+  const chunk = decoder.decode(value);
+  const lines = chunk.split('\\n').filter(l => l.startsWith('data: '));
+  
+  for (const line of lines) {
+    const dataStr = line.slice(6);
+    if (dataStr.trim() === '[DONE]') continue;
+    
+    try {
+      const event = JSON.parse(dataStr);
+      if (event.type === 'text-delta') {
+        process.stdout.write(event.delta || '');
+      }
+    } catch (e) { /* ignore parse errors on partial chunks */ }
+  }
+}`}
             />
           </div>
         </section>
