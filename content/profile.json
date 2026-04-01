@@ -5,7 +5,7 @@
   "birthday": "2019-03-25",
   "createdBy": "Dad (Prashanth)",
   "socials": {
-    "github": "https://github.com/kprsnt2"
+    "github": "https://github.com/kprsnt2/nanublog"
   },
   "favorites": [
     {
@@ -23,6 +23,10 @@
     {
       "emoji": "🚛",
       "label": "Truck"
+    },
+    {
+      "emoji": "⭐",
+      "label": "Roblox"
     }
   ]
 }
