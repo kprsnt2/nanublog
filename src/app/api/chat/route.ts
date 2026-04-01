@@ -58,10 +58,18 @@ function loadBlogContext(): string {
 const blogContext = loadBlogContext();
 
 export async function POST(req: Request) {
-  const { messages } = await req.json();
+  const body = await req.json().catch(() => ({}));
+  const { messages } = body;
+
+  if (!messages || !Array.isArray(messages)) {
+    return new Response(JSON.stringify({ error: 'Payload must contain a "messages" array.' }), {
+      status: 400,
+      headers: { 'Content-Type': 'application/json' },
+    });
+  }
 
   // Convert UIMessages (parts format) from the frontend to ModelMessages (content format) for streamText
-  const modelMessages = await convertToModelMessages(messages);
+  const modelMessages = await convertToModelMessages(messages).catch(() => messages);
 
   const result = streamText({
     model: google('gemini-2.5-flash-lite'),
