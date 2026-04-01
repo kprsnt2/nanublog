@@ -635,14 +635,21 @@ function AskNanuEditor({
   data: AskNanuData;
   onChange: (d: AskNanuData) => void;
 }) {
-  const [newYear, setNewYear] = useState(String(new Date().getFullYear()));
+  const [newYear, setNewYear] = useState("");
   const [newAge, setNewAge] = useState("");
 
   const questions = data?.questions || [];
   const answers = data?.answers || {};
 
   const addYear = () => {
-    if (!newYear || answers[newYear]) return;
+    if (!newYear) {
+      alert("Please enter a year!");
+      return;
+    }
+    if (answers[newYear]) {
+      alert(`The year ${newYear} already exists!`);
+      return;
+    }
     const updated = {
       ...data,
       questions,
