@@ -170,8 +170,12 @@ export default function AdminPage() {
       await fetchContent("profile.json", password);
       sessionStorage.setItem("admin_pw", password);
       setAuthenticated(true);
-    } catch {
-      setAuthError("Wrong password. Try again.");
+    } catch (err: any) {
+      if (err.message === "Unauthorized") {
+        setAuthError("Wrong password. Try again.");
+      } else {
+        setAuthError("GitHub Error: GITHUB_TOKEN is missing or invalid in Vercel.");
+      }
     }
   };
 
