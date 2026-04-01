@@ -18,17 +18,33 @@ const ALLOWED_FILES = [
 
 function authenticate(request: Request): boolean {
   const auth = request.headers.get('authorization');
-  if (!auth) return false;
+  if (!auth) {
+    console.error('[ADMIN ERR] No authorization header found.');
+    return false;
+  }
   
   const token = auth.replace('Bearer ', '').trim();
-  const expectedPassword = process.env.ADMIN_PASSWORD?.trim();
+  // Strip potential surrounding quotes from Vercel environment variables just in case
+  let expectedPassword = process.env.ADMIN_PASSWORD?.trim();
 
   if (!expectedPassword) {
-    console.error('[ADMIN ERR] ADMIN_PASSWORD environment variable is missing in Vercel.');
+    console.error('[ADMIN ERR] ADMIN_PASSWORD environment variable is empty or missing. Note: You MUST trigger a redeploy in Vercel after setting environment variables for them to take effect.');
     return false;
   }
 
-  return token === expectedPassword;
+  // If the user accidentally included quotes in their Vercel env var, remove them
+  if (expectedPassword.startsWith('"') && expectedPassword.endsWith('"')) {
+    expectedPassword = expectedPassword.slice(1, -1);
+  } else if (expectedPassword.startsWith("'") && expectedPassword.endsWith("'")) {
+    expectedPassword = expectedPassword.slice(1, -1);
+  }
+
+  if (token !== expectedPassword) {
+    console.error(`[ADMIN ERR] Password mismatch! Token length: ${token.length}, Expected length: ${expectedPassword.length}. Check for typos or invisible characters.`);
+    return false;
+  }
+
+  return true;
 }
 
 // GET — fetch a content file from GitHub
@@ -63,7 +79,7 @@ export async function GET(request: Request) {
       const err = await res.text();
       return NextResponse.json(
         { error: `GitHub API error: ${res.status}`, detail: err },
-        { status: res.status }
+        { status: res.status === 401 ? 502 : res.status }
       );
     }
 
@@ -131,7 +147,7 @@ export async function PUT(request: Request) {
       const err = await res.text();
       return NextResponse.json(
         { error: `GitHub API error: ${res.status}`, detail: err },
-        { status: res.status }
+        { status: res.status === 401 ? 502 : res.status }
       );
     }
 
