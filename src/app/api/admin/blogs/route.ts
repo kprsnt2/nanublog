@@ -5,7 +5,7 @@ export const dynamic = 'force-dynamic';
 const GITHUB_OWNER = 'kprsnt2';
 const GITHUB_REPO = 'nanublog';
 const GITHUB_BRANCH = process.env.GITHUB_BRANCH || 'test2features';
-const BLOGS_DIR = 'content/blogs';
+const BLOGS_DIR = 'blog_drafts';
 
 function authenticate(request: Request): boolean {
   const auth = request.headers.get('authorization');
