@@ -15,7 +15,13 @@ import {
   CheckCircle2,
   AlertCircle,
   Sparkles,
+  Eye,
+  Pencil,
+  FileText,
+  ArrowLeft,
+  X,
 } from "lucide-react";
+import { marked } from "marked";
 
 /* ────────────── types ────────────── */
 
@@ -63,7 +69,14 @@ interface AskNanuData {
   answers: Record<string, { age: number; responses: string[] }>;
 }
 
-type TabId = "timeline" | "gallery" | "drawings" | "asknanu" | "letters" | "profile";
+interface BlogPostEntry {
+  slug: string;
+  sha: string;
+  frontmatter: Record<string, string>;
+  body: string;
+}
+
+type TabId = "timeline" | "gallery" | "drawings" | "asknanu" | "letters" | "profile" | "blog";
 
 const TABS: { id: TabId; label: string; emoji: string; file: string }[] = [
   { id: "timeline", label: "Timeline", emoji: "🌱", file: "timeline.json" },
@@ -72,6 +85,7 @@ const TABS: { id: TabId; label: string; emoji: string; file: string }[] = [
   { id: "asknanu", label: "Ask Nanu", emoji: "🗣️", file: "ask-nanu.json" },
   { id: "letters", label: "Letters", emoji: "✉️", file: "letters.json" },
   { id: "profile", label: "Profile", emoji: "👤", file: "profile.json" },
+  { id: "blog", label: "Blog", emoji: "📝", file: "" },
 ];
 
 /* ────────────── API helpers ────────────── */
@@ -130,13 +144,19 @@ export default function AdminPage() {
     }
   }, []);
 
-  const showToast = (type: "success" | "error", message: string) => {
+  const showToast = useCallback((type: "success" | "error", message: string) => {
     setToast({ type, message });
     setTimeout(() => setToast(null), 4000);
-  };
+  }, []);
 
   const loadTab = useCallback(
     async (tabId: TabId) => {
+      // Blog tab manages its own data loading
+      if (tabId === "blog") {
+        setData(null);
+        setLoading(false);
+        return;
+      }
       const tab = TABS.find((t) => t.id === tabId)!;
       setLoading(true);
       setData(null);
@@ -155,7 +175,7 @@ export default function AdminPage() {
         setLoading(false);
       }
     },
-    [password]
+    [password, showToast]
   );
 
   // Load data when tab changes
@@ -170,8 +190,8 @@ export default function AdminPage() {
       await fetchContent("profile.json", password);
       sessionStorage.setItem("admin_pw", password);
       setAuthenticated(true);
-    } catch (err: any) {
-      if (err.message === "Unauthorized") {
+    } catch (err: unknown) {
+      if (err instanceof Error && err.message === "Unauthorized") {
         setAuthError("Wrong password. Try again.");
       } else {
         setAuthError("GitHub Error: GITHUB_TOKEN is missing or invalid in Vercel.");
@@ -293,70 +313,75 @@ export default function AdminPage() {
         </div>
 
         {/* Content area */}
-        <Card className="border-purple-200 shadow-sm min-h-[400px]">
-          <CardContent className="p-6">
-            {loading ? (
-              <div className="flex items-center justify-center py-20">
-                <Loader2 className="w-8 h-8 text-purple-400 animate-spin" />
-              </div>
-            ) : data !== null ? (
-              <div className="space-y-6">
-                {activeTab === "timeline" && (
-                  <TimelineEditor
-                    data={data as TimelineEntry[]}
-                    onChange={(d) => setData(d)}
-                  />
-                )}
-                {activeTab === "gallery" && (
-                  <GalleryEditor
-                    data={data as GalleryEntry[]}
-                    onChange={(d) => setData(d)}
-                  />
-                )}
-                {activeTab === "drawings" && (
-                  <DrawingsEditor
-                    data={data as DrawingEntry[]}
-                    onChange={(d) => setData(d)}
-                  />
-                )}
-                {activeTab === "asknanu" && (
-                  <AskNanuEditor
-                    data={data as AskNanuData}
-                    onChange={(d) => setData(d)}
-                  />
-                )}
-                {activeTab === "letters" && (
-                  <LettersEditor
-                    data={data as LetterEntry[]}
-                    onChange={(d) => setData(d)}
-                  />
-                )}
-                {activeTab === "profile" && (
-                  <ProfileEditor
-                    data={data as ProfileData}
-                    onChange={(d) => setData(d)}
-                  />
-                )}
-
-                {/* Save button */}
-                <div className="flex justify-end pt-4 border-t border-purple-100">
-                  <Button
-                    onClick={handleSave}
-                    disabled={saving}
-                    className="text-white cursor-pointer px-6"
-                    style={{ background: "linear-gradient(135deg, #7C3AED, #9333ea)" }}
-                  >
-                    {saving ? (
-                      <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Saving…</>
-                    ) : (
-                      <><Save className="w-4 h-4 mr-2" /> Save & Deploy</>
-                    )}
-                  </Button>
+        {/* Blog tab has its own card/layout */}
+        {activeTab === "blog" ? (
+          <BlogEditor password={password} showToast={showToast} />
+        ) : (
+          <Card className="border-purple-200 shadow-sm min-h-[400px]">
+            <CardContent className="p-6">
+              {loading ? (
+                <div className="flex items-center justify-center py-20">
+                  <Loader2 className="w-8 h-8 text-purple-400 animate-spin" />
                 </div>
-              </div>
-            ) : null}
-          </CardContent>
-        </Card>
+              ) : data !== null ? (
+                <div className="space-y-6">
+                  {activeTab === "timeline" && (
+                    <TimelineEditor
+                      data={data as TimelineEntry[]}
+                      onChange={(d) => setData(d)}
+                    />
+                  )}
+                  {activeTab === "gallery" && (
+                    <GalleryEditor
+                      data={data as GalleryEntry[]}
+                      onChange={(d) => setData(d)}
+                    />
+                  )}
+                  {activeTab === "drawings" && (
+                    <DrawingsEditor
+                      data={data as DrawingEntry[]}
+                      onChange={(d) => setData(d)}
+                    />
+                  )}
+                  {activeTab === "asknanu" && (
+                    <AskNanuEditor
+                      data={data as AskNanuData}
+                      onChange={(d) => setData(d)}
+                    />
+                  )}
+                  {activeTab === "letters" && (
+                    <LettersEditor
+                      data={data as LetterEntry[]}
+                      onChange={(d) => setData(d)}
+                    />
+                  )}
+                  {activeTab === "profile" && (
+                    <ProfileEditor
+                      data={data as ProfileData}
+                      onChange={(d) => setData(d)}
+                    />
+                  )}
+
+                  {/* Save button */}
+                  <div className="flex justify-end pt-4 border-t border-purple-100">
+                    <Button
+                      onClick={handleSave}
+                      disabled={saving}
+                      className="text-white cursor-pointer px-6"
+                      style={{ background: "linear-gradient(135deg, #7C3AED, #9333ea)" }}
+                    >
+                      {saving ? (
+                        <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Saving…</>
+                      ) : (
+                        <><Save className="w-4 h-4 mr-2" /> Save & Deploy</>
+                      )}
+                    </Button>
+                  </div>
+                </div>
+              ) : null}
+            </CardContent>
+          </Card>
+        )}
 
         {/* Toast */}
         {toast && (
@@ -914,5 +939,475 @@ function ProfileEditor({
         </div>
       </div>
     </div>
+  );
+}
+
+/* ══════════════════════════════════════════════════════════════════
+   BLOG EDITOR
+   ══════════════════════════════════════════════════════════════════ */
+
+function BlogEditor({
+  password,
+  showToast,
+}: {
+  password: string;
+  showToast: (type: "success" | "error", message: string) => void;
+}) {
+  const [posts, setPosts] = useState<BlogPostEntry[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [editingPost, setEditingPost] = useState<{
+    slug: string;
+    sha: string;
+    title: string;
+    date: string;
+    excerpt: string;
+    category: string;
+    nanuAge: string;
+    aiModel: string;
+    tags: string;
+    body: string;
+    isNew: boolean;
+  } | null>(null);
+  const [saving, setSaving] = useState(false);
+  const [deleting, setDeleting] = useState<string | null>(null);
+  const [previewMode, setPreviewMode] = useState(false);
+
+  const authHeaders = { Authorization: `Bearer ${password}` };
+
+  const loadPosts = useCallback(async () => {
+    setLoading(true);
+    try {
+      const res = await fetch("/api/admin/blogs", { headers: authHeaders });
+      if (!res.ok) throw new Error("Failed to load blog posts");
+      const data = await res.json();
+      setPosts(data.posts || []);
+    } catch (e: unknown) {
+      showToast("error", e instanceof Error ? e.message : "Failed to load blogs");
+    } finally {
+      setLoading(false);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [password]);
+
+  useEffect(() => {
+    loadPosts();
+  }, [loadPosts]);
+
+  const openNewPost = () => {
+    setEditingPost({
+      slug: "",
+      sha: "",
+      title: "",
+      date: new Date().toISOString().split("T")[0],
+      excerpt: "",
+      category: "",
+      nanuAge: "",
+      aiModel: "",
+      tags: "",
+      body: "\n# Your Blog Post\n\nStart writing here...\n",
+      isNew: true,
+    });
+    setPreviewMode(false);
+  };
+
+  const openEditPost = async (post: BlogPostEntry) => {
+    // Fetch the full raw content for editing
+    try {
+      const res = await fetch(`/api/admin/blogs?slug=${post.slug}`, {
+        headers: authHeaders,
+      });
+      if (!res.ok) throw new Error("Failed to fetch post");
+      const data = await res.json();
+
+      // Parse the raw markdown to extract frontmatter and body
+      const raw = data.content as string;
+      const fmMatch = raw.match(/^---\r?\n([\s\S]*?)\r?\n---\r?\n([\s\S]*)$/);
+
+      let fm: Record<string, string> = {};
+      let body = raw;
+
+      if (fmMatch) {
+        body = fmMatch[2];
+        fmMatch[1].split("\n").forEach((line: string) => {
+          const colonIdx = line.indexOf(":");
+          if (colonIdx > 0) {
+            const key = line.slice(0, colonIdx).trim();
+            let val = line.slice(colonIdx + 1).trim();
+            if (
+              (val.startsWith('"') && val.endsWith('"')) ||
+              (val.startsWith("'") && val.endsWith("'"))
+            ) {
+              val = val.slice(1, -1);
+            }
+            fm[key] = val;
+          }
+        });
+      }
+
+      setEditingPost({
+        slug: post.slug,
+        sha: data.sha,
+        title: fm.title || "",
+        date: fm.date ? fm.date.split("T")[0] : "",
+        excerpt: fm.excerpt || "",
+        category: fm.category || "",
+        nanuAge: fm.nanuAge || "",
+        aiModel: fm.aiModel || fm.ai_model || "",
+        tags: fm.tags || "",
+        body,
+        isNew: false,
+      });
+      setPreviewMode(false);
+    } catch (e: unknown) {
+      showToast("error", e instanceof Error ? e.message : "Failed to load post");
+    }
+  };
+
+  const buildMarkdown = () => {
+    if (!editingPost) return "";
+    const lines = ["---"];
+    if (editingPost.title) lines.push(`title: "${editingPost.title}"`);
+    if (editingPost.date) lines.push(`date: "${editingPost.date}T10:00:00Z"`);
+    if (editingPost.excerpt) lines.push(`excerpt: "${editingPost.excerpt}"`);
+    if (editingPost.category) lines.push(`category: "${editingPost.category}"`);
+    if (editingPost.nanuAge) lines.push(`nanuAge: ${editingPost.nanuAge}`);
+    if (editingPost.aiModel) lines.push(`aiModel: "${editingPost.aiModel}"`);
+    if (editingPost.tags) lines.push(`tags: ${editingPost.tags}`);
+    lines.push("---");
+    lines.push(editingPost.body);
+    return lines.join("\n");
+  };
+
+  const handleSavePost = async () => {
+    if (!editingPost) return;
+
+    const slug = editingPost.isNew
+      ? editingPost.slug || editingPost.title.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "")
+      : editingPost.slug;
+
+    if (!slug) {
+      showToast("error", "Please enter a title to generate a slug.");
+      return;
+    }
+
+    setSaving(true);
+    try {
+      const content = buildMarkdown();
+      const body: Record<string, string> = { slug, content };
+      if (editingPost.sha) body.sha = editingPost.sha;
+
+      const res = await fetch("/api/admin/blogs", {
+        method: "PUT",
+        headers: { ...authHeaders, "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
+
+      if (!res.ok) {
+        const err = await res.json();
+        throw new Error(err.error || "Failed to save");
+      }
+
+      const result = await res.json();
+      showToast("success", `Blog post "${slug}" saved! Vercel will redeploy.`);
+      setEditingPost((prev) =>
+        prev ? { ...prev, sha: result.newSha, slug, isNew: false } : null
+      );
+      loadPosts();
+    } catch (e: unknown) {
+      showToast("error", e instanceof Error ? e.message : "Save failed");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleDeletePost = async (post: BlogPostEntry) => {
+    if (!confirm(`Delete "${post.slug}"? This commits a deletion to GitHub.`)) return;
+
+    setDeleting(post.slug);
+    try {
+      const res = await fetch("/api/admin/blogs", {
+        method: "DELETE",
+        headers: { ...authHeaders, "Content-Type": "application/json" },
+        body: JSON.stringify({ slug: post.slug, sha: post.sha }),
+      });
+
+      if (!res.ok) {
+        const err = await res.json();
+        throw new Error(err.error || "Failed to delete");
+      }
+
+      showToast("success", `Deleted "${post.slug}".`);
+      loadPosts();
+    } catch (e: unknown) {
+      showToast("error", e instanceof Error ? e.message : "Delete failed");
+    } finally {
+      setDeleting(null);
+    }
+  };
+
+  const updateField = (field: string, value: string) => {
+    setEditingPost((prev) => (prev ? { ...prev, [field]: value } : null));
+  };
+
+  // Render the preview HTML
+  const getPreviewHtml = () => {
+    if (!editingPost) return "";
+    try {
+      return marked.parse(editingPost.body) as string;
+    } catch {
+      return "<p>Error rendering preview</p>";
+    }
+  };
+
+  /* ──── Editing view ──── */
+  if (editingPost) {
+    return (
+      <div className="space-y-4">
+        {/* Editor header */}
+        <div className="flex items-center justify-between">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setEditingPost(null)}
+            className="text-purple-600 hover:bg-purple-50 cursor-pointer"
+          >
+            <ArrowLeft className="w-4 h-4 mr-1" /> Back to list
+          </Button>
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setPreviewMode(!previewMode)}
+              className="text-purple-600 border-purple-200 cursor-pointer"
+            >
+              {previewMode ? (
+                <><Pencil className="w-4 h-4 mr-1" /> Edit</>
+              ) : (
+                <><Eye className="w-4 h-4 mr-1" /> Preview</>
+              )}
+            </Button>
+            <Button
+              size="sm"
+              onClick={handleSavePost}
+              disabled={saving}
+              className="text-white cursor-pointer"
+              style={{ background: "linear-gradient(135deg, #7C3AED, #9333ea)" }}
+            >
+              {saving ? (
+                <><Loader2 className="w-4 h-4 mr-1 animate-spin" /> Saving…</>
+              ) : (
+                <><Save className="w-4 h-4 mr-1" /> Save Post</>
+              )}
+            </Button>
+          </div>
+        </div>
+
+        {/* Frontmatter fields */}
+        <Card className="border-purple-200 shadow-sm">
+          <CardContent className="p-4 space-y-3">
+            <h3 className="text-sm font-bold text-purple-700 flex items-center gap-1.5">
+              <FileText className="w-4 h-4" /> Post Metadata
+            </h3>
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+              <div className="sm:col-span-2">
+                <FieldLabel>Title</FieldLabel>
+                <Input
+                  value={editingPost.title}
+                  onChange={(e) => updateField("title", e.target.value)}
+                  placeholder="My Amazing Blog Post"
+                  className="border-purple-200 text-sm"
+                />
+              </div>
+              <div>
+                <FieldLabel>Date</FieldLabel>
+                <Input
+                  type="date"
+                  value={editingPost.date}
+                  onChange={(e) => updateField("date", e.target.value)}
+                  className="border-purple-200 text-sm"
+                />
+              </div>
+            </div>
+            <div>
+              <FieldLabel>Excerpt</FieldLabel>
+              <Input
+                value={editingPost.excerpt}
+                onChange={(e) => updateField("excerpt", e.target.value)}
+                placeholder="A short description of the post..."
+                className="border-purple-200 text-sm"
+              />
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <div>
+                <FieldLabel>Category</FieldLabel>
+                <Input
+                  value={editingPost.category}
+                  onChange={(e) => updateField("category", e.target.value)}
+                  placeholder="adventure"
+                  className="border-purple-200 text-sm"
+                />
+              </div>
+              <div>
+                <FieldLabel>Nanu&apos;s Age</FieldLabel>
+                <Input
+                  value={editingPost.nanuAge}
+                  onChange={(e) => updateField("nanuAge", e.target.value)}
+                  placeholder="7"
+                  className="border-purple-200 text-sm"
+                />
+              </div>
+              <div>
+                <FieldLabel>AI Model</FieldLabel>
+                <Input
+                  value={editingPost.aiModel}
+                  onChange={(e) => updateField("aiModel", e.target.value)}
+                  placeholder="Gemini 2.5"
+                  className="border-purple-200 text-sm"
+                />
+              </div>
+            </div>
+            {editingPost.isNew && (
+              <div>
+                <FieldLabel>Slug (auto-generated from title, or set manually)</FieldLabel>
+                <Input
+                  value={editingPost.slug}
+                  onChange={(e) => updateField("slug", e.target.value)}
+                  placeholder={editingPost.title.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || "my-blog-post"}
+                  className="border-purple-200 text-sm font-mono"
+                />
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Editor / Preview */}
+        <Card className="border-purple-200 shadow-sm">
+          <CardContent className="p-0">
+            {previewMode ? (
+              <div className="p-6">
+                <div className="flex items-center gap-2 mb-4 pb-3 border-b border-purple-100">
+                  <Eye className="w-4 h-4 text-purple-500" />
+                  <span className="text-sm font-semibold text-purple-700">Preview</span>
+                </div>
+                <div
+                  className="prose prose-purple max-w-none prose-headings:text-purple-800 prose-p:text-purple-900 prose-li:text-purple-900 prose-strong:text-purple-700 prose-a:text-purple-600"
+                  dangerouslySetInnerHTML={{ __html: getPreviewHtml() }}
+                />
+              </div>
+            ) : (
+              <div>
+                <div className="flex items-center gap-2 px-4 py-3 border-b border-purple-100 bg-purple-50/50">
+                  <Pencil className="w-4 h-4 text-purple-500" />
+                  <span className="text-sm font-semibold text-purple-700">Markdown Editor</span>
+                  <Badge variant="outline" className="text-[10px] border-purple-200 text-purple-400 ml-auto">
+                    Markdown
+                  </Badge>
+                </div>
+                <textarea
+                  value={editingPost.body}
+                  onChange={(e) => updateField("body", e.target.value)}
+                  rows={24}
+                  className="w-full px-4 py-3 text-sm font-mono text-purple-900 bg-white focus:outline-none resize-y min-h-[400px] border-0"
+                  placeholder="Write your markdown content here..."
+                  spellCheck={false}
+                />
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  /* ──── Post list view ──── */
+  return (
+    <Card className="border-purple-200 shadow-sm min-h-[400px]">
+      <CardContent className="p-6">
+        <div className="flex items-center justify-between mb-6">
+          <h3 className="text-lg font-bold text-purple-800">📝 Blog Posts ({posts.length})</h3>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={openNewPost}
+            className="text-purple-600 border-purple-200 cursor-pointer"
+          >
+            <Plus className="w-4 h-4 mr-1" /> New Post
+          </Button>
+        </div>
+
+        {loading ? (
+          <div className="flex items-center justify-center py-20">
+            <Loader2 className="w-8 h-8 text-purple-400 animate-spin" />
+          </div>
+        ) : posts.length === 0 ? (
+          <div className="text-center py-16 space-y-3">
+            <FileText className="w-12 h-12 text-purple-200 mx-auto" />
+            <p className="text-purple-400 text-sm">No blog posts yet.</p>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={openNewPost}
+              className="text-purple-600 border-purple-200 cursor-pointer"
+            >
+              <Plus className="w-4 h-4 mr-1" /> Create your first post
+            </Button>
+          </div>
+        ) : (
+          <div className="space-y-3">
+            {posts.map((post) => (
+              <div
+                key={post.slug}
+                className="p-4 rounded-xl border border-purple-100 bg-purple-50/40 flex items-center justify-between group hover:border-purple-200 transition-colors"
+              >
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center gap-2 mb-1">
+                    <p className="font-semibold text-purple-800 text-sm truncate">
+                      {post.frontmatter.title || post.slug}
+                    </p>
+                    {post.frontmatter.category && (
+                      <Badge variant="outline" className="text-[10px] border-purple-200 text-purple-500 shrink-0">
+                        {post.frontmatter.category}
+                      </Badge>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-3 text-xs text-purple-400">
+                    <span className="font-mono">{post.slug}.md</span>
+                    {post.frontmatter.date && (
+                      <span>{new Date(post.frontmatter.date).toLocaleDateString()}</span>
+                    )}
+                    {post.frontmatter.excerpt && (
+                      <span className="truncate max-w-[300px] hidden sm:inline">{post.frontmatter.excerpt}</span>
+                    )}
+                  </div>
+                </div>
+                <div className="flex gap-1.5 shrink-0 ml-3">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => openEditPost(post)}
+                    className="w-8 h-8 text-purple-500 hover:text-purple-700 hover:bg-purple-100 cursor-pointer"
+                  >
+                    <Pencil className="w-3.5 h-3.5" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => handleDeletePost(post)}
+                    disabled={deleting === post.slug}
+                    className="w-8 h-8 text-red-400 hover:text-red-600 hover:bg-red-50 cursor-pointer"
+                  >
+                    {deleting === post.slug ? (
+                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                    ) : (
+                      <Trash2 className="w-3.5 h-3.5" />
+                    )}
+                  </Button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </CardContent>
+    </Card>
   );
 }
