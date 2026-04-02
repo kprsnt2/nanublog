@@ -62,17 +62,37 @@ function FlowStep({
   accent?: "purple" | "pink" | "amber" | "emerald";
 }) {
   const accents = {
-    purple: "from-purple-500 to-purple-600 border-purple-200 bg-purple-50",
-    pink: "from-pink-500 to-pink-600 border-pink-200 bg-pink-50",
-    amber: "from-amber-500 to-amber-600 border-amber-200 bg-amber-50",
-    emerald: "from-emerald-500 to-emerald-600 border-emerald-200 bg-emerald-50",
+    purple: {
+      gradient: "from-purple-500 to-purple-600",
+      border: "border-purple-200",
+      bg: "bg-purple-50",
+      icon: "text-purple-600",
+    },
+    pink: {
+      gradient: "from-pink-500 to-pink-600",
+      border: "border-pink-200",
+      bg: "bg-pink-50",
+      icon: "text-pink-600",
+    },
+    amber: {
+      gradient: "from-amber-500 to-amber-600",
+      border: "border-amber-200",
+      bg: "bg-amber-50",
+      icon: "text-amber-600",
+    },
+    emerald: {
+      gradient: "from-emerald-500 to-emerald-600",
+      border: "border-emerald-200",
+      bg: "bg-emerald-50",
+      icon: "text-emerald-600",
+    },
   };
-  const [gradient, border, bg] = accents[accent].split(" ");
+  const { gradient, border, bg, icon } = accents[accent];
 
   return (
     <div className="flex gap-4 items-start group">
       <div
-        className={`w-10 h-10 rounded-xl bg-gradient-to-br ${gradient} to-${accent}-600 flex items-center justify-center shrink-0 shadow-md text-white font-bold text-sm group-hover:scale-110 transition-transform`}
+        className={`w-10 h-10 rounded-xl bg-gradient-to-br ${gradient} flex items-center justify-center shrink-0 shadow-md text-white font-bold text-sm group-hover:scale-110 transition-transform`}
       >
         {step}
       </div>
@@ -81,7 +101,7 @@ function FlowStep({
       >
         <CardContent className="p-4">
           <div className="flex items-center gap-2 mb-1.5">
-            <Icon className={`w-4 h-4 text-${accent}-600`} />
+            <Icon className={`w-4 h-4 ${icon}`} />
             <h4 className="font-bold text-purple-800">{title}</h4>
           </div>
           <p className="text-sm text-purple-700 leading-relaxed">

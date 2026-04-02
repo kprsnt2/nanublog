@@ -4,7 +4,7 @@ export const dynamic = 'force-dynamic';
 
 const GITHUB_OWNER = 'kprsnt2';
 const GITHUB_REPO = 'nanublog';
-const GITHUB_BRANCH = 'test2features';
+const GITHUB_BRANCH = process.env.GITHUB_BRANCH || 'test2features';
 const CONTENT_DIR = 'content';
 
 const ALLOWED_FILES = [
