@@ -13,6 +13,7 @@ const navLinks = [
     { href: "/drawings", label: "Drawings", emoji: "🎨" },
     { href: "/ask-nanu", label: "Ask Nanu", emoji: "🗣️" },
     { href: "/tags", label: "Tags", emoji: "🏷️" },
+    { href: "/games/train-crash", label: "Games", emoji: "🎮" },
     { href: "/docs", label: "Docs", emoji: "📚" },
 ];
 

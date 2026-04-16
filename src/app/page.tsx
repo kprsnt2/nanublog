@@ -14,6 +14,7 @@ const sectionLinks = [
   { href: "/drawings", emoji: "🎨", label: "Drawings", description: "Nanu's artwork" },
   { href: "/ask-nanu", emoji: "🗣️", label: "Ask Nanu", description: "Yearly Q&A tracker" },
   { href: "/tags", emoji: "🏷️", label: "Tags", description: "Browse by category" },
+  { href: "/games/train-crash", emoji: "🎮", label: "Games", description: "Train crash & more!" },
 ];
 
 export default function Home() {
