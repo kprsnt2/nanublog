@@ -17,13 +17,21 @@ const CAR_GAP = 6;
 const CAR_COUNT = 2; // locomotive + 2 cars
 const DERAIL_CHANCE = 0.001; // per-frame probability
 const AUTO_SPAWN_MS = 2500; // new train every ~2.5s
-const CRASH_PARTICLE_COUNT = 16; // reduced from 28
-const SMOKE_INTERVAL = 5; // frames between smoke puffs (was 3)
-const MAX_SMOKE_PER_TRAIN = 8; // cap smoke puffs
-const MAX_ACTIVE_TRAINS = 25; // cap to prevent lag
-const MAX_CRASHES = 5; // max simultaneous crash effects
+const CRASH_PARTICLE_COUNT = 16;
+const SMOKE_INTERVAL = 5;
+const MAX_SMOKE_PER_TRAIN = 8;
+const MAX_ACTIVE_TRAINS = 25;
+const MAX_CRASHES = 5;
 const MAX_HONKS = 6;
-const DERAIL_TTL = 90; // frames before derailed trains are removed
+const DERAIL_TTL = 90;
+
+// Road & Vehicle constants
+const VEHICLE_COLORS = ["#3B82F6", "#10B981", "#F59E0B", "#EF4444", "#8B5CF6", "#EC4899", "#06B6D4", "#F97316"];
+const VEHICLE_SPAWN_MS = 1800;
+const MAX_VEHICLES = 15;
+const TRUCK_STOP_CHANCE = 0.15;
+const TRUCK_STOP_FRAMES = 300; // 5 seconds at 60fps
+const LEADERBOARD_KEY = "train-crash-leaderboard";
 
 // ─── Types ───────────────────────────────────────────────────────────
 interface Vec { x: number; y: number }
@@ -31,7 +39,34 @@ interface Vec { x: number; y: number }
 interface Track {
   points: Vec[];
   color: string;
-  length: number; // cached length
+  length: number;
+}
+
+interface Road {
+  y: number;
+  trackCrossings: { x: number; trackIdx: number }[];
+}
+
+type VehicleType = "car" | "truck" | "tram";
+
+interface RoadVehicle {
+  id: number;
+  type: VehicleType;
+  roadIdx: number;
+  x: number; y: number;
+  speed: number;
+  direction: number; // 1 = right, -1 = left
+  color: string;
+  width: number; height: number;
+  stopped: boolean;
+  stopTimer: number;
+  stopTrackIdx: number; // which track it stopped on
+  crossed: boolean; // already counted as safe
+  destroyed: boolean;
+  derailed: boolean;
+  derailVx: number; derailVy: number;
+  derailAngle: number; derailRotSpeed: number;
+  derailTimer: number;
 }
 
 interface SmokePuff {
@@ -80,6 +115,13 @@ interface Train {
   cars: { x: number; y: number; angle: number; color: string }[];
   honkTimer: number;
 }
+
+interface LeaderboardEntry {
+  crashes: number;
+  safeCrossings: number;
+  date: string;
+}
+
 
 // ─── Helpers ─────────────────────────────────────────────────────────
 function lerp(a: number, b: number, t: number) { return a + (b - a) * t; }
@@ -146,13 +188,86 @@ function generateTracks(w: number, h: number): Track[] {
   return tracks;
 }
 
-// ─── Pre-render track to offscreen canvas ────────────────────────────
-function renderTracksToBuffer(tracks: Track[], w: number, h: number, dpr: number): HTMLCanvasElement {
+// ─── Road Generator ──────────────────────────────────────────────────
+function generateRoads(tracks: Track[], w: number, h: number): Road[] {
+  const roads: Road[] = [];
+  const roadCount = randInt(2, 3);
+  const usedYs: number[] = [];
+
+  for (let r = 0; r < roadCount; r++) {
+    // Pick a Y that doesn't overlap with other roads
+    let y = 0;
+    for (let attempt = 0; attempt < 20; attempt++) {
+      y = rand(80, h - 80);
+      if (usedYs.every(uy => Math.abs(uy - y) > 80)) break;
+    }
+    usedYs.push(y);
+
+    // Find where this road crosses each track
+    const crossings: { x: number; trackIdx: number }[] = [];
+    for (let ti = 0; ti < tracks.length; ti++) {
+      const pts = tracks[ti].points;
+      for (let i = 0; i < pts.length - 1; i++) {
+        const a = pts[i], b = pts[i + 1];
+        if ((a.y <= y && b.y >= y) || (a.y >= y && b.y <= y)) {
+          const t = (y - a.y) / (b.y - a.y);
+          if (t >= 0 && t <= 1) {
+            crossings.push({ x: lerp(a.x, b.x, t), trackIdx: ti });
+          }
+        }
+      }
+    }
+    roads.push({ y, trackCrossings: crossings });
+  }
+  return roads;
+}
+
+// ─── Pre-render tracks & roads to offscreen canvas ───────────────────
+function renderTracksToBuffer(tracks: Track[], roads: Road[], w: number, h: number, dpr: number): HTMLCanvasElement {
   const offscreen = document.createElement("canvas");
   offscreen.width = w * dpr;
   offscreen.height = h * dpr;
   const ctx = offscreen.getContext("2d")!;
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+  // Draw roads first (below tracks)
+  for (const road of roads) {
+    // Road surface
+    ctx.fillStyle = "rgba(60, 60, 70, 0.6)";
+    ctx.fillRect(0, road.y - 14, w, 28);
+    // Road edges
+    ctx.strokeStyle = "rgba(200, 200, 200, 0.3)";
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.moveTo(0, road.y - 14); ctx.lineTo(w, road.y - 14);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(0, road.y + 14); ctx.lineTo(w, road.y + 14);
+    ctx.stroke();
+    // Dashed center line
+    ctx.setLineDash([12, 8]);
+    ctx.strokeStyle = "rgba(255, 200, 50, 0.4)";
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(0, road.y); ctx.lineTo(w, road.y);
+    ctx.stroke();
+    ctx.setLineDash([]);
+
+    // Crossing markers (where road meets tracks)
+    for (const cross of road.trackCrossings) {
+      ctx.fillStyle = "rgba(255, 200, 50, 0.25)";
+      ctx.fillRect(cross.x - 15, road.y - 16, 30, 32);
+      // Warning stripes
+      ctx.strokeStyle = "rgba(255, 100, 50, 0.4)";
+      ctx.lineWidth = 2;
+      for (let s = -12; s <= 12; s += 6) {
+        ctx.beginPath();
+        ctx.moveTo(cross.x + s - 3, road.y - 16);
+        ctx.lineTo(cross.x + s + 3, road.y + 16);
+        ctx.stroke();
+      }
+    }
+  }
 
   for (const track of tracks) {
     const pts = track.points;
@@ -207,6 +322,17 @@ function renderTracksToBuffer(tracks: Track[], w: number, h: number, dpr: number
 // ─── Smoke color pool (avoid string allocations) ─────────────────────
 const SMOKE_POOL = ["rgba(120,120,120,", "rgba(160,160,160,", "rgba(200,200,200,"];
 
+// ─── Leaderboard helpers ─────────────────────────────────────────────
+function loadLeaderboard(): LeaderboardEntry[] {
+  try {
+    const raw = localStorage.getItem(LEADERBOARD_KEY);
+    return raw ? JSON.parse(raw) : [];
+  } catch { return []; }
+}
+function saveLeaderboard(entries: LeaderboardEntry[]) {
+  localStorage.setItem(LEADERBOARD_KEY, JSON.stringify(entries.slice(0, 10)));
+}
+
 // ─── Main Component ──────────────────────────────────────────────────
 export default function TrainCrashGame() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -215,6 +341,8 @@ export default function TrainCrashGame() {
   const stateRef = useRef<{
     trains: Train[];
     tracks: Track[];
+    roads: Road[];
+    vehicles: RoadVehicle[];
     crashes: CrashEffect[];
     nextId: number;
     w: number;
@@ -222,9 +350,12 @@ export default function TrainCrashGame() {
     frame: number;
     honks: { x: number; y: number; text: string; life: number }[];
     totalCrashes: number;
+    safeCrossings: number;
   }>({
     trains: [],
     tracks: [],
+    roads: [],
+    vehicles: [],
     crashes: [],
     nextId: 0,
     w: 0,
@@ -232,10 +363,15 @@ export default function TrainCrashGame() {
     frame: 0,
     honks: [],
     totalCrashes: 0,
+    safeCrossings: 0,
   });
 
   const [trainCount, setTrainCount] = useState(0);
   const [crashCount, setCrashCount] = useState(0);
+  const [safeCount, setSafeCount] = useState(0);
+  const [vehicleCount, setVehicleCount] = useState(0);
+  const [showLeaderboard, setShowLeaderboard] = useState(false);
+  const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>(loadLeaderboard());
 
   // Create a new train on a random track
   const spawnTrain = useCallback(() => {
@@ -276,6 +412,42 @@ export default function TrainCrashGame() {
     s.trains.push(train);
   }, []);
 
+  // Create a road vehicle
+  const spawnVehicle = useCallback(() => {
+    const s = stateRef.current;
+    if (s.roads.length === 0) return;
+    const activeV = s.vehicles.filter(v => !v.destroyed).length;
+    if (activeV >= MAX_VEHICLES) return;
+
+    const roadIdx = randInt(0, s.roads.length - 1);
+    const road = s.roads[roadIdx];
+    const direction = Math.random() > 0.5 ? 1 : -1;
+    const type: VehicleType = pick(["car", "car", "truck", "truck", "tram"]);
+    const dims = type === "car" ? { w: 30, h: 14 } : type === "truck" ? { w: 44, h: 16 } : { w: 52, h: 12 };
+    const spd = type === "tram" ? rand(0.8, 1.2) : type === "truck" ? rand(0.6, 1.4) : rand(1.0, 2.0);
+
+    s.vehicles.push({
+      id: s.nextId++,
+      type,
+      roadIdx,
+      x: direction > 0 ? -dims.w : s.w + dims.w,
+      y: road.y + (direction > 0 ? -5 : 5),
+      speed: spd,
+      direction,
+      color: pick(VEHICLE_COLORS),
+      width: dims.w, height: dims.h,
+      stopped: false,
+      stopTimer: 0,
+      stopTrackIdx: -1,
+      crossed: false,
+      destroyed: false,
+      derailed: false,
+      derailVx: 0, derailVy: 0,
+      derailAngle: 0, derailRotSpeed: 0,
+      derailTimer: 0,
+    });
+  }, []);
+
   // Init
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -292,11 +464,12 @@ export default function TrainCrashGame() {
       const ctx = canvas.getContext("2d");
       if (ctx) ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 
-      // Regenerate tracks on resize
+      // Regenerate tracks & roads on resize
       stateRef.current.tracks = generateTracks(rect.width, rect.height);
+      stateRef.current.roads = generateRoads(stateRef.current.tracks, rect.width, rect.height);
 
-      // Pre-render tracks to offscreen buffer
-      trackBufferRef.current = renderTracksToBuffer(stateRef.current.tracks, rect.width, rect.height, dpr);
+      // Pre-render tracks & roads to offscreen buffer
+      trackBufferRef.current = renderTracksToBuffer(stateRef.current.tracks, stateRef.current.roads, rect.width, rect.height, dpr);
 
       // Generate stars
       starsRef.current = Array.from({ length: 50 }, () => ({
@@ -311,8 +484,12 @@ export default function TrainCrashGame() {
     // Spawn initial trains
     for (let i = 0; i < 4; i++) spawnTrain();
 
-    // Auto-spawn
+    // Auto-spawn trains & vehicles
     const spawnInterval = setInterval(spawnTrain, AUTO_SPAWN_MS);
+    const vehicleInterval = setInterval(spawnVehicle, VEHICLE_SPAWN_MS);
+
+    // Spawn initial vehicles
+    for (let i = 0; i < 3; i++) spawnVehicle();
 
     // Click to spawn
     const handleClick = () => {
@@ -333,6 +510,15 @@ export default function TrainCrashGame() {
     return () => {
       cancelAnimationFrame(raf);
       clearInterval(spawnInterval);
+      clearInterval(vehicleInterval);
+      // Save score on unmount
+      const st = stateRef.current;
+      if (st.totalCrashes > 0 || st.safeCrossings > 0) {
+        const lb = loadLeaderboard();
+        lb.push({ crashes: st.totalCrashes, safeCrossings: st.safeCrossings, date: new Date().toLocaleDateString() });
+        lb.sort((a, b) => b.crashes - a.crashes);
+        saveLeaderboard(lb);
+      }
       window.removeEventListener("resize", resize);
       canvas.removeEventListener("click", handleClick);
     };
@@ -531,6 +717,132 @@ export default function TrainCrashGame() {
       if (c.life <= 0) s.crashes.splice(i, 1);
     }
 
+    // ─── Update road vehicles ────────────────────────────────────────
+    for (let vi = s.vehicles.length - 1; vi >= 0; vi--) {
+      const v = s.vehicles[vi];
+      if (v.destroyed) continue;
+
+      if (v.derailed) {
+        // Derailed vehicle physics (same as train derail)
+        v.derailTimer++;
+        v.x += v.derailVx;
+        v.y += v.derailVy;
+        v.derailVy += 0.15;
+        v.derailAngle += v.derailRotSpeed;
+        if (v.derailTimer > DERAIL_TTL || v.y > s.h + 80 || v.x < -150 || v.x > s.w + 150) {
+          v.destroyed = true;
+        }
+        continue;
+      }
+
+      if (v.stopped) {
+        v.stopTimer--;
+        if (v.stopTimer <= 0) {
+          // Truck resumes — safe crossing!
+          v.stopped = false;
+          if (!v.crossed) {
+            v.crossed = true;
+            s.safeCrossings++;
+            if (s.honks.length < MAX_HONKS) {
+              s.honks.push({ x: v.x, y: v.y - 25, text: pick(["✅ SAFE!", "PHEW! 😅", "CLOSE ONE! 🍀", "LUCKY! 🎉"]), life: 50 });
+            }
+          }
+        }
+      } else {
+        // Move vehicle
+        v.x += v.speed * v.direction;
+
+        // Check if truck is near a track crossing — chance to stop
+        if (v.type === "truck" && !v.crossed) {
+          const road = s.roads[v.roadIdx];
+          if (road) {
+            for (const cross of road.trackCrossings) {
+              const dx = Math.abs(v.x - cross.x);
+              if (dx < 8 && Math.random() < TRUCK_STOP_CHANCE) {
+                v.stopped = true;
+                v.stopTimer = TRUCK_STOP_FRAMES;
+                v.stopTrackIdx = cross.trackIdx;
+                v.x = cross.x; // snap to crossing
+                if (s.honks.length < MAX_HONKS) {
+                  s.honks.push({ x: v.x, y: v.y - 25, text: pick(["🛑 STUCK!", "ENGINE DEAD! 🚛", "OH NO! 😰", "HELP! 🆘"]), life: 80 });
+                }
+                break;
+              }
+            }
+          }
+        }
+
+        // Remove if off-screen
+        if ((v.direction > 0 && v.x > s.w + v.width + 10) || (v.direction < 0 && v.x < -v.width - 10)) {
+          v.destroyed = true;
+        }
+      }
+    }
+
+    // ─── Train-Vehicle collision ──────────────────────────────────────
+    const activeTrains = s.trains.filter(t => !t.crashed && !t.derailed);
+    for (const train of activeTrains) {
+      for (const v of s.vehicles) {
+        if (v.destroyed || v.derailed) continue;
+        const dx = train.x - v.x;
+        const dy = train.y - v.y;
+        const collDist = (TRAIN_W / 2 + v.width / 2) * 0.7;
+        if (dx * dx + dy * dy < collDist * collDist) {
+          // CRASH — same epic effect as train-train!
+          const cx = (train.x + v.x) / 2;
+          const cy = (train.y + v.y) / 2;
+
+          if (s.crashes.length < MAX_CRASHES) {
+            const particles: CrashParticle[] = [];
+            for (let p = 0; p < CRASH_PARTICLE_COUNT; p++) {
+              const angle = Math.random() * Math.PI * 2;
+              const spd = rand(2, 8);
+              const isEmoji = Math.random() > 0.6;
+              particles.push({
+                x: cx, y: cy,
+                vx: Math.cos(angle) * spd,
+                vy: Math.sin(angle) * spd - rand(1, 3),
+                r: rand(3, 7),
+                color: pick([train.color, v.color, "#FBBF24", "#EF4444"]),
+                life: 0,
+                maxLife: rand(30, 55),
+                emoji: isEmoji ? pick(["💥", "⭐", "🔥", "💫", "✨", "🚛", "🚗"]) : undefined,
+              });
+            }
+            s.crashes.push({
+              x: cx, y: cy, particles,
+              shockwave: 0, maxShockwave: rand(60, 100), life: 60,
+            });
+          }
+
+          // Derail the train
+          train.derailed = true;
+          train.derailTimer = 0;
+          train.derailVx = -Math.sign(train.speed || 1) * rand(3, 6);
+          train.derailVy = -rand(2, 4);
+          train.derailRotSpeed = rand(-0.12, 0.12);
+
+          // Derail the vehicle (fling it)
+          v.derailed = true;
+          v.derailTimer = 0;
+          v.derailVx = Math.sign(train.speed || 1) * rand(4, 8);
+          v.derailVy = -rand(3, 6);
+          v.derailAngle = 0;
+          v.derailRotSpeed = rand(-0.15, 0.15);
+
+          s.totalCrashes++;
+
+          if (s.honks.length < MAX_HONKS) {
+            s.honks.push({
+              x: cx, y: cy - 30,
+              text: pick(["💥 TRAIN vs TRUCK!", "CRASH! 🚂💥🚛", "KABOOM! 🔥", "WHAM! 💫", "SMASH! 💥"]),
+              life: 60,
+            });
+          }
+        }
+      }
+    }
+
     // Update honks
     for (let i = s.honks.length - 1; i >= 0; i--) {
       s.honks[i].life--;
@@ -538,13 +850,16 @@ export default function TrainCrashGame() {
       if (s.honks[i].life <= 0) s.honks.splice(i, 1);
     }
 
-    // Prune crashed trains immediately
+    // Prune crashed trains & destroyed vehicles
     s.trains = s.trains.filter(t => !t.crashed);
+    s.vehicles = s.vehicles.filter(v => !v.destroyed);
 
     // Throttle React state updates (every 10 frames)
     if (s.frame % 10 === 0) {
       setTrainCount(s.trains.length);
       setCrashCount(s.totalCrashes);
+      setSafeCount(s.safeCrossings);
+      setVehicleCount(s.vehicles.filter(v => !v.derailed).length);
     }
   }, []);
 
@@ -608,6 +923,12 @@ export default function TrainCrashGame() {
       drawLocomotive(ctx, train.x, train.y, train.angle, train.color, train.speed > 0);
     }
 
+    // Draw road vehicles
+    for (const v of s.vehicles) {
+      if (v.destroyed) continue;
+      drawRoadVehicle(ctx, v, s.frame);
+    }
+
     // Draw crash effects
     for (const crash of s.crashes) {
       // Shockwave ring
@@ -658,21 +979,36 @@ export default function TrainCrashGame() {
     ctx.globalAlpha = 1;
   }, []);
 
+  const saveScore = useCallback(() => {
+    const s = stateRef.current;
+    const lb = loadLeaderboard();
+    lb.push({ crashes: s.totalCrashes, safeCrossings: s.safeCrossings, date: new Date().toLocaleDateString() });
+    lb.sort((a, b) => b.crashes - a.crashes);
+    saveLeaderboard(lb);
+    setLeaderboard([...lb.slice(0, 10)]);
+  }, []);
+
   return (
     <div className="space-y-4">
       {/* Stats bar */}
-      <div className="flex flex-wrap justify-center gap-4 text-sm">
-        <div className="bg-purple-900/50 backdrop-blur-sm text-purple-200 px-4 py-2 rounded-full border border-purple-500/30 font-bold">
-          🚂 Active Trains: <span className="text-yellow-400">{trainCount}</span>
+      <div className="flex flex-wrap justify-center gap-3 text-sm">
+        <div className="bg-purple-900/50 backdrop-blur-sm text-purple-200 px-3 py-2 rounded-full border border-purple-500/30 font-bold">
+          🚂 Trains: <span className="text-yellow-400">{trainCount}</span>
         </div>
-        <div className="bg-purple-900/50 backdrop-blur-sm text-purple-200 px-4 py-2 rounded-full border border-purple-500/30 font-bold">
+        <div className="bg-purple-900/50 backdrop-blur-sm text-purple-200 px-3 py-2 rounded-full border border-purple-500/30 font-bold">
+          🚗 Vehicles: <span className="text-cyan-400">{vehicleCount}</span>
+        </div>
+        <div className="bg-purple-900/50 backdrop-blur-sm text-purple-200 px-3 py-2 rounded-full border border-purple-500/30 font-bold">
           💥 Crashes: <span className="text-red-400">{crashCount}</span>
+        </div>
+        <div className="bg-purple-900/50 backdrop-blur-sm text-purple-200 px-3 py-2 rounded-full border border-purple-500/30 font-bold">
+          ✅ Safe: <span className="text-green-400">{safeCount}</span>
         </div>
         <button
           onClick={spawnTrain}
-          className="bg-gradient-to-r from-purple-600 to-pink-600 text-white px-5 py-2 rounded-full font-bold hover:scale-105 transition-transform active:scale-95 shadow-lg shadow-purple-500/30"
+          className="bg-gradient-to-r from-purple-600 to-pink-600 text-white px-4 py-2 rounded-full font-bold hover:scale-105 transition-transform active:scale-95 shadow-lg shadow-purple-500/30"
         >
-          + Add Train 🚂
+          + Train 🚂
         </button>
       </div>
 
@@ -689,22 +1025,74 @@ export default function TrainCrashGame() {
         </div>
       </div>
 
+      {/* Leaderboard toggle + Save */}
+      <div className="flex justify-center gap-3">
+        <button
+          onClick={() => setShowLeaderboard(!showLeaderboard)}
+          className="bg-gradient-to-r from-yellow-500 to-orange-500 text-white px-5 py-2 rounded-full font-bold hover:scale-105 transition-transform active:scale-95 shadow-lg"
+        >
+          🏆 {showLeaderboard ? "Hide" : "Show"} Leaderboard
+        </button>
+        <button
+          onClick={saveScore}
+          className="bg-gradient-to-r from-green-500 to-emerald-600 text-white px-5 py-2 rounded-full font-bold hover:scale-105 transition-transform active:scale-95 shadow-lg"
+        >
+          💾 Save Score
+        </button>
+      </div>
+
+      {/* Leaderboard panel */}
+      {showLeaderboard && (
+        <div className="bg-purple-900/60 backdrop-blur-sm rounded-2xl border border-purple-500/30 p-4 max-w-md mx-auto">
+          <h3 className="text-center text-lg font-black text-yellow-400 mb-3">🏆 Top Scores</h3>
+          {leaderboard.length === 0 ? (
+            <p className="text-center text-purple-300 text-sm">No scores yet! Play and save your score.</p>
+          ) : (
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="text-purple-300 border-b border-purple-500/30">
+                  <th className="pb-2 text-left">#</th>
+                  <th className="pb-2 text-center">💥 Crashes</th>
+                  <th className="pb-2 text-center">✅ Safe</th>
+                  <th className="pb-2 text-right">Date</th>
+                </tr>
+              </thead>
+              <tbody>
+                {leaderboard.map((entry, i) => (
+                  <tr key={i} className="text-purple-200 border-b border-purple-500/10">
+                    <td className="py-1.5 font-bold text-yellow-400">{i + 1}</td>
+                    <td className="py-1.5 text-center text-red-400 font-bold">{entry.crashes}</td>
+                    <td className="py-1.5 text-center text-green-400 font-bold">{entry.safeCrossings}</td>
+                    <td className="py-1.5 text-right text-purple-400">{entry.date}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+        </div>
+      )}
+
       {/* Instructions */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-center">
-        <div className="bg-white/80 backdrop-blur rounded-xl p-4 border border-purple-200 shadow-sm">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-center">
+        <div className="bg-white/80 backdrop-blur rounded-xl p-3 border border-purple-200 shadow-sm">
           <div className="text-2xl mb-1">🚂</div>
-          <p className="text-sm font-bold text-purple-700">Unlimited Trains</p>
-          <p className="text-xs text-purple-400">New trains spawn automatically!</p>
+          <p className="text-xs font-bold text-purple-700">Trains & Vehicles</p>
+          <p className="text-xs text-purple-400">All spawn automatically!</p>
         </div>
-        <div className="bg-white/80 backdrop-blur rounded-xl p-4 border border-purple-200 shadow-sm">
-          <div className="text-2xl mb-1">🔀</div>
-          <p className="text-sm font-bold text-purple-700">Random Derails</p>
-          <p className="text-xs text-purple-400">Trains go off the rails randomly!</p>
+        <div className="bg-white/80 backdrop-blur rounded-xl p-3 border border-purple-200 shadow-sm">
+          <div className="text-2xl mb-1">🛑</div>
+          <p className="text-xs font-bold text-purple-700">Stuck Trucks</p>
+          <p className="text-xs text-purple-400">Trucks get stuck on tracks!</p>
         </div>
-        <div className="bg-white/80 backdrop-blur rounded-xl p-4 border border-purple-200 shadow-sm">
+        <div className="bg-white/80 backdrop-blur rounded-xl p-3 border border-purple-200 shadow-sm">
           <div className="text-2xl mb-1">💥</div>
-          <p className="text-sm font-bold text-purple-700">Epic Crashes</p>
-          <p className="text-xs text-purple-400">Trains crash with explosive effects!</p>
+          <p className="text-xs font-bold text-purple-700">Epic Crashes</p>
+          <p className="text-xs text-purple-400">Trains smash into everything!</p>
+        </div>
+        <div className="bg-white/80 backdrop-blur rounded-xl p-3 border border-purple-200 shadow-sm">
+          <div className="text-2xl mb-1">🏆</div>
+          <p className="text-xs font-bold text-purple-700">Leaderboard</p>
+          <p className="text-xs text-purple-400">Save scores & compete!</p>
         </div>
       </div>
     </div>
@@ -841,4 +1229,101 @@ function darkenColor(hex: string, amount: number): string {
   const g = Math.max(0, ((num >> 8) & 0x00FF) - amount);
   const b = Math.max(0, (num & 0x0000FF) - amount);
   return `rgb(${r},${g},${b})`;
+}
+
+// ─── Road Vehicle Drawing ────────────────────────────────────────────
+function drawRoadVehicle(ctx: CanvasRenderingContext2D, v: RoadVehicle, frame: number) {
+  ctx.save();
+  ctx.translate(v.x, v.y);
+  if (v.derailed) ctx.rotate(v.derailAngle);
+
+  const hw = v.width / 2;
+  const hh = v.height / 2;
+
+  // Stopped truck blink
+  if (v.stopped && Math.floor(frame / 10) % 2 === 0) {
+    ctx.strokeStyle = "#EF4444";
+    ctx.lineWidth = 3;
+    roundRect(ctx, -hw - 3, -hh - 3, v.width + 6, v.height + 6, 5);
+    ctx.stroke();
+  }
+
+  if (v.type === "car") {
+    // Car body
+    const grad = ctx.createLinearGradient(0, -hh, 0, hh);
+    grad.addColorStop(0, lightenColor(v.color, 30));
+    grad.addColorStop(1, v.color);
+    ctx.fillStyle = grad;
+    roundRect(ctx, -hw, -hh, v.width, v.height, 4);
+    ctx.fill();
+    // Windshield
+    ctx.fillStyle = "rgba(200, 230, 255, 0.8)";
+    ctx.fillRect(-hw + 4, -hh + 2, 8, v.height - 4);
+    ctx.fillRect(hw - 10, -hh + 2, 6, v.height - 4);
+    // Wheels
+    ctx.fillStyle = "#222";
+    ctx.fillRect(-hw + 2, hh - 2, 6, 3);
+    ctx.fillRect(hw - 8, hh - 2, 6, 3);
+    ctx.fillRect(-hw + 2, -hh - 1, 6, 3);
+    ctx.fillRect(hw - 8, -hh - 1, 6, 3);
+    // Headlights
+    ctx.fillStyle = "#FBBF24";
+    ctx.fillRect(v.direction > 0 ? hw - 2 : -hw, -3, 3, 6);
+  } else if (v.type === "truck") {
+    // Cab
+    const cabW = v.width * 0.35;
+    const cabX = v.direction > 0 ? hw - cabW : -hw;
+    ctx.fillStyle = v.color;
+    roundRect(ctx, cabX, -hh, cabW, v.height, 3);
+    ctx.fill();
+    // Windshield
+    ctx.fillStyle = "rgba(200, 230, 255, 0.8)";
+    const wsX = v.direction > 0 ? hw - cabW + 2 : -hw + 2;
+    ctx.fillRect(wsX, -hh + 2, cabW - 4, v.height - 4);
+    // Cargo box
+    const cargoX = v.direction > 0 ? -hw : -hw + cabW;
+    const cargoW = v.width - cabW;
+    ctx.fillStyle = darkenColor(v.color, 30);
+    ctx.fillRect(cargoX, -hh + 1, cargoW, v.height - 2);
+    ctx.strokeStyle = "rgba(255,255,255,0.2)";
+    ctx.lineWidth = 1;
+    ctx.strokeRect(cargoX, -hh + 1, cargoW, v.height - 2);
+    // Wheels
+    ctx.fillStyle = "#222";
+    ctx.fillRect(-hw + 2, hh - 2, 8, 3);
+    ctx.fillRect(hw - 10, hh - 2, 8, 3);
+    ctx.fillRect(0, hh - 2, 6, 3);
+    ctx.fillRect(-hw + 2, -hh - 1, 8, 3);
+    ctx.fillRect(hw - 10, -hh - 1, 8, 3);
+    // Headlights
+    ctx.fillStyle = "#FBBF24";
+    ctx.fillRect(v.direction > 0 ? hw - 2 : -hw, -3, 3, 6);
+  } else {
+    // Tram — elongated rectangle with stripes
+    const grad = ctx.createLinearGradient(0, -hh, 0, hh);
+    grad.addColorStop(0, lightenColor(v.color, 20));
+    grad.addColorStop(1, v.color);
+    ctx.fillStyle = grad;
+    roundRect(ctx, -hw, -hh, v.width, v.height, 3);
+    ctx.fill();
+    // Stripe
+    ctx.fillStyle = darkenColor(v.color, 30);
+    ctx.fillRect(-hw + 2, -1, v.width - 4, 2);
+    // Windows
+    ctx.fillStyle = "rgba(200, 230, 255, 0.7)";
+    for (let w = 0; w < 5; w++) {
+      ctx.fillRect(-hw + 4 + w * (v.width - 8) / 5, -hh + 2, 6, v.height - 4);
+    }
+    // Pantograph (top wire)
+    ctx.strokeStyle = "rgba(255,255,255,0.4)";
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.moveTo(0, -hh);
+    ctx.lineTo(-3, -hh - 8);
+    ctx.lineTo(3, -hh - 8);
+    ctx.lineTo(0, -hh);
+    ctx.stroke();
+  }
+
+  ctx.restore();
 }
