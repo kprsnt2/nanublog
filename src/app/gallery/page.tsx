@@ -1,15 +1,10 @@
-import galleryData from "../../../content/gallery.json";
+import { scanImagesFromFolder, groupImagesByMonth } from "@/lib/gallery";
 import { Card, CardContent } from "@/components/ui/card";
-
-interface Photo {
-    src: string;
-    caption: string;
-    date: string;
-    category: string;
-}
+import { Badge } from "@/components/ui/badge";
 
 export default function GalleryPage() {
-    const photos: Photo[] = galleryData;
+    const photos = scanImagesFromFolder("gallery");
+    const groupedPhotos = groupImagesByMonth(photos);
 
     return (
         <main className="min-h-screen px-6 py-12 md:py-20">
@@ -21,28 +16,43 @@ export default function GalleryPage() {
                     <p className="text-xl text-purple-400">
                         Snapshots of Nanu&apos;s adventures, smiles, and everything in between!
                     </p>
+                    {photos.length > 0 && (
+                        <Badge className="mt-3 text-sm px-3 py-1 bg-purple-100 text-purple-700 border-purple-200">
+                            {photos.length} photo{photos.length !== 1 ? "s" : ""}
+                        </Badge>
+                    )}
                 </div>
 
                 {photos.length > 0 ? (
-                    <div className="columns-1 sm:columns-2 lg:columns-3 gap-4 space-y-4">
-                        {photos.map((photo, i) => (
-                            <Card key={i} className="card-bounce bg-white border-purple-100 shadow-sm break-inside-avoid overflow-hidden">
-                                <img
-                                    src={photo.src}
-                                    alt={photo.caption}
-                                    className="w-full h-auto object-cover"
-                                />
-                                <CardContent className="pt-3 pb-3">
-                                    <p className="font-semibold text-purple-800 text-sm">{photo.caption}</p>
-                                    <p className="text-xs text-purple-400 mt-1">
-                                        {new Date(photo.date).toLocaleDateString("en-US", {
-                                            month: "long",
-                                            year: "numeric",
-                                        })}
-                                        {photo.category && ` · ${photo.category}`}
-                                    </p>
-                                </CardContent>
-                            </Card>
+                    <div className="space-y-12">
+                        {Array.from(groupedPhotos.entries()).map(([monthYear, monthPhotos]) => (
+                            <section key={monthYear}>
+                                <h2 className="text-2xl font-bold text-purple-700 mb-4 flex items-center gap-2">
+                                    <span className="text-xl">📅</span> {monthYear}
+                                    <Badge variant="outline" className="text-xs border-purple-200 text-purple-500 ml-2">
+                                        {monthPhotos.length}
+                                    </Badge>
+                                </h2>
+                                <div className="columns-1 sm:columns-2 lg:columns-3 gap-4 space-y-4">
+                                    {monthPhotos.map((photo, i) => (
+                                        <Card key={i} className="card-bounce bg-white border-purple-100 shadow-sm break-inside-avoid overflow-hidden">
+                                            <img
+                                                src={photo.src}
+                                                alt={photo.filename}
+                                                className="w-full h-auto object-cover"
+                                                loading="lazy"
+                                            />
+                                            <CardContent className="pt-3 pb-3">
+                                                {photo.dateFormatted && (
+                                                    <p className="text-xs text-purple-400">
+                                                        {photo.dateFormatted}
+                                                    </p>
+                                                )}
+                                            </CardContent>
+                                        </Card>
+                                    ))}
+                                </div>
+                            </section>
                         ))}
                     </div>
                 ) : (
@@ -50,8 +60,9 @@ export default function GalleryPage() {
                         <div className="text-6xl mb-6">📷</div>
                         <h3 className="text-2xl font-bold text-purple-700 mb-2">No photos yet!</h3>
                         <p className="text-purple-400 max-w-lg mx-auto">
-                            Dad will add photos here soon. To add photos, put images in the <code className="bg-purple-50 px-2 py-1 rounded text-sm">public/gallery/</code> folder
-                            and add entries to <code className="bg-purple-50 px-2 py-1 rounded text-sm">content/gallery.json</code>
+                            Drop photos into the <code className="bg-purple-50 px-2 py-1 rounded text-sm">public/gallery/</code> folder.
+                            Name them like <code className="bg-purple-50 px-2 py-1 rounded text-sm">IMG_20190614_220013.jpg</code> and
+                            dates will be extracted automatically!
                         </p>
                     </div>
                 )}
