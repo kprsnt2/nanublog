@@ -329,11 +329,10 @@ body::before {
   position: fixed;
   inset: 0;
   z-index: 100;
-  background: rgba(10, 5, 30, 0.95);
-  backdrop-filter: blur(20px);
+  background: rgba(10, 5, 30, 0.97);
   display: flex;
   flex-direction: column;
-  animation: lightbox-fadein 0.25s ease;
+  animation: lightbox-fadein 0.2s ease;
 }
 
 @keyframes lightbox-fadein {
@@ -455,9 +454,10 @@ body::before {
   max-height: calc(100vh - 220px);
   object-fit: contain;
   border-radius: 0.75rem;
-  transition: opacity 0.3s ease;
-  box-shadow: 0 20px 80px rgba(0, 0, 0, 0.5);
+  transition: opacity 0.25s ease;
+  box-shadow: 0 8px 40px rgba(0, 0, 0, 0.4);
   user-select: none;
+  will-change: opacity;
 }
 
 @media (max-width: 640px) {
@@ -595,6 +595,16 @@ body::before {
   border-color: #A78BFA;
   opacity: 1;
   box-shadow: 0 0 0 2px rgba(167, 139, 250, 0.3);
+}
+
+.lightbox-thumb-ellipsis {
+  display: flex;
+  align-items: center;
+  color: rgba(255, 255, 255, 0.4);
+  font-size: 1.2rem;
+  padding: 0 0.25rem;
+  letter-spacing: 0.1em;
+  user-select: none;
 }
 
 /* Slideshow play button on gallery header */

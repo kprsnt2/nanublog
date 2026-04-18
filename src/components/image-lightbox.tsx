@@ -30,6 +30,21 @@ export default function ImageLightbox({ images, initialIndex = 0, isOpen, onClos
     setCurrentIndex(initialIndex);
   }, [initialIndex]);
 
+  // Preload adjacent images for smoother navigation
+  useEffect(() => {
+    if (!isOpen || images.length <= 1) return;
+
+    const preloadIndexes = [
+      (currentIndex + 1) % images.length,
+      (currentIndex - 1 + images.length) % images.length,
+    ];
+
+    preloadIndexes.forEach((idx) => {
+      const img = new Image();
+      img.src = images[idx].src;
+    });
+  }, [currentIndex, isOpen, images]);
+
   const goNext = useCallback(() => {
     setIsLoading(true);
     setIsZoomed(false);
@@ -67,7 +82,6 @@ export default function ImageLightbox({ images, initialIndex = 0, isOpen, onClos
     };
 
     document.addEventListener("keydown", handleKeyDown);
-    // Prevent body scroll when lightbox is open
     document.body.style.overflow = "hidden";
 
     return () => {
@@ -76,15 +90,15 @@ export default function ImageLightbox({ images, initialIndex = 0, isOpen, onClos
     };
   }, [isOpen, goNext, goPrev, onClose]);
 
-  // Slideshow auto-play
+  // Slideshow auto-play — wait for image to load before starting timer
   useEffect(() => {
-    if (isPlaying && isOpen) {
-      slideshowRef.current = setInterval(goNext, 3000);
+    if (isPlaying && isOpen && !isLoading) {
+      slideshowRef.current = setTimeout(goNext, 3000);
     }
     return () => {
-      if (slideshowRef.current) clearInterval(slideshowRef.current);
+      if (slideshowRef.current) clearTimeout(slideshowRef.current);
     };
-  }, [isPlaying, isOpen, goNext]);
+  }, [isPlaying, isOpen, isLoading, goNext]);
 
   // Touch handling for swipe
   const handleTouchStart = (e: React.TouchEvent) => {
@@ -96,7 +110,6 @@ export default function ImageLightbox({ images, initialIndex = 0, isOpen, onClos
     const deltaX = e.changedTouches[0].clientX - touchStartX.current;
     const deltaY = e.changedTouches[0].clientY - touchStartY.current;
 
-    // Only swipe if horizontal movement is dominant
     if (Math.abs(deltaX) > Math.abs(deltaY) && Math.abs(deltaX) > 50) {
       if (deltaX < 0) goNext();
       else goPrev();
@@ -106,6 +119,11 @@ export default function ImageLightbox({ images, initialIndex = 0, isOpen, onClos
   if (!isOpen || images.length === 0) return null;
 
   const current = images[currentIndex];
+
+  // Only show nearby thumbnails (±5) to avoid loading 30+ full images
+  const thumbStart = Math.max(0, currentIndex - 5);
+  const thumbEnd = Math.min(images.length, currentIndex + 6);
+  const visibleThumbs = images.slice(thumbStart, thumbEnd);
 
   return (
     <div
@@ -160,6 +178,7 @@ export default function ImageLightbox({ images, initialIndex = 0, isOpen, onClos
             </div>
           )}
           <img
+            key={currentIndex}
             src={current.src}
             alt={current.filename}
             className="lightbox-image"
@@ -192,30 +211,39 @@ export default function ImageLightbox({ images, initialIndex = 0, isOpen, onClos
       </div>
 
       {/* Slideshow progress */}
-      {isPlaying && (
+      {isPlaying && !isLoading && (
         <div className="lightbox-progress">
           <div className="lightbox-progress-bar" key={currentIndex}></div>
         </div>
       )}
 
-      {/* Thumbnail strip */}
+      {/* Thumbnail strip — only nearby images */}
       {images.length > 1 && (
         <div className="lightbox-thumbs">
           <div className="lightbox-thumbs-scroll">
-            {images.map((img, i) => (
-              <button
-                key={i}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setIsLoading(true);
-                  setIsZoomed(false);
-                  setCurrentIndex(i);
-                }}
-                className={`lightbox-thumb ${i === currentIndex ? "lightbox-thumb-active" : ""}`}
-              >
-                <img src={img.src} alt="" loading="lazy" draggable={false} />
-              </button>
-            ))}
+            {thumbStart > 0 && (
+              <span className="lightbox-thumb-ellipsis">···</span>
+            )}
+            {visibleThumbs.map((img, i) => {
+              const realIndex = thumbStart + i;
+              return (
+                <button
+                  key={realIndex}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setIsLoading(true);
+                    setIsZoomed(false);
+                    setCurrentIndex(realIndex);
+                  }}
+                  className={`lightbox-thumb ${realIndex === currentIndex ? "lightbox-thumb-active" : ""}`}
+                >
+                  <img src={img.src} alt="" loading="lazy" draggable={false} />
+                </button>
+              );
+            })}
+            {thumbEnd < images.length && (
+              <span className="lightbox-thumb-ellipsis">···</span>
+            )}
           </div>
         </div>
       )}
